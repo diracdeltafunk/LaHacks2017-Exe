@@ -11,7 +11,6 @@
 
 #include <cstdint>
 #include <unordered_set>
-using namespace std;
 
 enum NodeType {     //Arity:
     ConstantQ,      //1
@@ -32,13 +31,18 @@ enum NodeType {     //Arity:
 
 class Node {
 public:
-    virtual ~Node() = 0;
+    virtual ~Node();
+    virtual Node* clone() const = 0;
     virtual NodeType Type() const = 0;
 };
 
 class RationalNode : public Node {
 public:
     RationalNode(int init_num, int init_den) : num(init_num), den(init_den) {}
+
+    RationalNode* clone() const {
+        return new RationalNode(*this);
+    }
 
     NodeType Type() const { return NodeType::ConstantQ; }
 
@@ -54,44 +58,70 @@ public:
 class PiNode : public Node {
 public:
     NodeType Type() const { return NodeType::ConstantPi; }
+
+    PiNode* clone() const {
+        return new PiNode;
+    }
 };
 
 class ENode : public Node {
 public:
     NodeType Type() const { return NodeType::ConstantE; }
+
+    ENode* clone() const {
+        return new ENode;
+    }
 };
 
 class IdentityNode : public Node {
 public:
     NodeType Type() const { return NodeType::Identity; }
+
+    IdentityNode* clone() const {
+        return new IdentityNode;
+    }
 };
 
 class AdditionNode : public Node {
 public:
-    AdditionNode(unordered_set<Node*> init_addends) : addends(init_addends) {}
+    AdditionNode(std::unordered_set<Node*> init_addends) : addends(init_addends) {}
 
     ~AdditionNode() {
         for (auto x : addends)
             delete x;
     }
 
+    AdditionNode* clone() const {
+        std::unordered_set<Node*> newAddends;
+        for (auto a : addends)
+            newAddends.insert(a->clone());
+        return new AdditionNode(newAddends);
+    }
+
     NodeType Type() const { return NodeType::Addition; }
 
-    unordered_set<Node*> addends;
+    std::unordered_set<Node*> addends;
 };
 
 class ProductNode : public Node {
 public:
-    ProductNode(unordered_set<Node*> init_factors) : factors(init_factors) {}
+    ProductNode(std::unordered_set<Node*> init_factors) : factors(init_factors) {}
 
     ~ProductNode() {
         for (auto x : factors)
             delete x;
     }
 
+    ProductNode* clone() const {
+        std::unordered_set<Node*> newFactors;
+        for (auto f : factors)
+            newFactors.insert(f->clone());
+        return new ProductNode(newFactors);
+    }
+
     NodeType Type() const { return NodeType::Multiplication; }
 
-    unordered_set<Node*> factors;
+    std::unordered_set<Node*> factors;
 };
 
 class NegationNode : public Node {
@@ -100,6 +130,10 @@ public:
 
     ~NegationNode() {
         delete arg;
+    }
+
+    NegationNode* clone() const {
+        return new NegationNode(arg->clone());
     }
 
     NodeType Type() const { return NodeType::Negation; }
@@ -115,6 +149,10 @@ public:
         delete arg;
     }
 
+    InversionNode* clone() const {
+        return new InversionNode(arg->clone());
+    }
+
     NodeType Type() const { return NodeType::Inversion; }
 
     Node* arg;
@@ -126,6 +164,10 @@ public:
 
     ~ExpNode() {
         delete arg;
+    }
+
+    ExpNode* clone() const {
+        return new ExpNode(arg->clone());
     }
 
     NodeType Type() const { return NodeType::Exponentiation; }
@@ -141,6 +183,10 @@ public:
         delete arg;
     }
 
+    LogNode* clone() const {
+        return new LogNode(arg->clone());
+    }
+
     NodeType Type() const { return NodeType::Logarithm; }
 
     Node* arg;
@@ -152,6 +198,10 @@ public:
 
     ~SinNode() {
         delete arg;
+    }
+
+    SinNode* clone() const {
+        return new SinNode(arg->clone());
     }
 
     NodeType Type() const { return NodeType::Sine; }
@@ -167,6 +217,10 @@ public:
         delete arg;
     }
 
+    CosNode* clone() const {
+        return new CosNode(arg->clone());
+    }
+
     NodeType Type() const { return NodeType::Cosine; }
 
     Node* arg;
@@ -178,6 +232,10 @@ public:
 
     ~ArcSinNode() {
         delete arg;
+    }
+
+    ArcSinNode* clone() const {
+        return new ArcSinNode(arg->clone());
     }
 
     NodeType Type() const { return NodeType::ArcSin; }
@@ -193,6 +251,10 @@ public:
         delete arg;
     }
 
+    ArcTanNode* clone() const {
+        return new ArcTanNode(arg->clone());
+    }
+
     NodeType Type() const { return NodeType::ArcTan; }
 
     Node* arg;
@@ -202,13 +264,23 @@ class Expression {
 public:
     Expression(Node* init_head) : head(init_head) {}
 
-    Expression(const Expression& other) {
-        head = new Node;
-        *head = *other.head;
+    friend void swap(Expression& first, Expression& second) {
+        using std::swap;
+        swap(first.head, second.head);
     }
 
-    Expression& operator=(const Expression& other) {
-        //writing copy-assignment
+    Expression(const Expression& other) {
+        head = other.head->clone();
+    }
+
+    Expression& operator=(Expression other) {
+        swap(*this, other);
+        return *this;
+    }
+
+    Expression(Expression&& other) {
+        head = nullptr;
+        swap(*this, other);
     }
 
     ~Expression() {
@@ -217,7 +289,7 @@ public:
 
     Expression operator+(Expression g) {
         // This set will hold the addends in the head addition of our eventual expression
-        unordered_set<Node*> newAddends;
+        std::unordered_set<Node*> newAddends;
 
         // Test if addition is already one of the operations in f and/or g
         if (head->Type() == NodeType::Addition) {
@@ -237,6 +309,7 @@ public:
 
         return Expression(newHead);
     }
+
     Expression operator-() {
         NegationNode* newHead = new NegationNode(head);
         // Distribute negation over addition - not yet implemented
@@ -249,7 +322,7 @@ public:
     }
     Expression operator*(Expression g) {
         // This set will hold the addends in the head addition of our eventual expression
-        unordered_set<Node*> newFactors;
+        std::unordered_set<Node*> newFactors;
 
         // Test if addition is already one of the operations in f and/or g
         if (head->Type() == NodeType::Multiplication) {

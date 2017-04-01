@@ -1,9 +1,9 @@
-CC = clang
-CFLAGS = -O2 -Weverything -std=c++14
+CC=clang++
+CFLAGS=-O2 -std=c++14
 DEPS = expression.h
 OBJ = main.o expression.o
 
-%.o: %.c $(DEPS)
+%.o: %.cpp $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 main: $(OBJ)
