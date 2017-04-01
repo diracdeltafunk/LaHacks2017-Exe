@@ -1,3 +1,14 @@
+//
+//  expression.h
+//  LaHacks2017
+//
+//  Created by Kyle Hess on 4/1/17.
+//  Copyright © 2017 Kyle Hess. All rights reserved.
+//
+
+#ifndef expression_h
+#define expression_h
+
 #include <unordered_set>
 #include "rational.h"
 
@@ -380,3 +391,5 @@ public:
     
     Node* head;
 };
+
+#endif /* expression_h */
