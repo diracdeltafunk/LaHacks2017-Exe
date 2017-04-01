@@ -6,70 +6,63 @@
 
 using namespace std;
 
-vector<Expression> CancelAdditive(Expression formula){
+vector<Expression> CancelAdditive(const Expression& formula) {
     vector<Expression> list;
     if (formula.head->Type() == NodeType::Addition) {
-        unordered_set<Node*> nodeAddends = dynamic_cast<AdditionNode*>(formula.head)->addends;
+        auto nodeAddends = dynamic_cast<AdditionNode*>(formula.head)->addends;
         for (const auto& term1 : nodeAddends) {
             for (const auto& term2 : nodeAddends) {
-                if(term1->Type() == NodeType::Negation && *(term1->arg) == *term2) {
+                if(term1->Type() == NodeType::Negation && *(dynamic_cast<NegationNode*>(term1)->getArg()) == *term2) {
                     nodeAddends.erase(term1);
                     nodeAddends.erase(term2);
                     list.push_back(Expression(new AdditionNode(nodeAddends)));
                     nodeAddends = dynamic_cast<AdditionNode*>(formula.head)->addends;
                 }
             }
-            
-            vector<Expression> nodelist = CancelAdditive(Expression(term1));
-            for(auto & expr : nodelist){
+            for (const auto& expr : CancelAdditive(Expression(term1))){
                 nodeAddends.erase(term1);
                 nodeAddends.emplace(expr.head);
                 list.push_back(Expression(new AdditionNode(nodeAddends)));
                 nodeAddends = dynamic_cast<AdditionNode*>(formula.head)->addends;
             }
-            
         }
-        
-    }else if(formula.head->Type() == NodeType::ConstantQ
-             || formula.head->Type() == NodeType::ConstantPi
-             || formula.head->Type() == NodeType::ConstantE
-             || formula.head->Type() == NodeType::Identity){
-        
         return list;
-        
-    }else if(formula.head->Type() == NodeType::Multiplication){
-        
-        for (const auto& term1 : nodeAddends) {
-            vector<Expression> nodelist = CancelAdditive(Expression(term1));
-            for(auto & expr : nodelist){
-                nodeAddends.erase(term1);
-                nodeAddends.emplace(expr.head);
-                list.push_back(Expression(new AdditionNode(nodeAddends)));
-                nodeAddends = dynamic_cast<AdditionNode*>(formula.head)->addends;
+    }
+    if(formula.head->arity() == 0) {
+        return list;
+    }
+    if(formula.head->Type() == NodeType::Multiplication) {
+        auto nodeFactors = dynamic_cast<ProductNode*>(formula.head)->factors;
+        for (const auto& term1 : nodeFactors) {
+            for (const auto& expr : CancelAdditive(Expression(term1))) {
+                nodeFactors.erase(term1);
+                nodeFactors.emplace(expr.head);
+                list.push_back(Expression(new ProductNode(nodeFactors)));
+                nodeFactors = dynamic_cast<ProductNode*>(formula.head)->factors;
             }
-            
         }
-        
-    }else if(formula.head->Type() == NodeType::Exponentiation){
-        
+        return list;
+    }
+    if(formula.head->Type() == NodeType::Exponentiation) {
         Node* Base = dynamic_cast<ExpNode*>(formula.head)->base;
         Node* Exponent = dynamic_cast<ExpNode*>(formula.head)->exponent;
-        vector<Expression> nodelist1 = CancelAdditive(Expression(Base));
-        for(auto & expr : nodelist1){
-            list.push_back(Expression(new ExpNode(expr,Exponent)));
+        for(const auto & expr : CancelAdditive(Expression(Base))){
+            list.push_back(Expression(new ExpNode(expr.head, Exponent)));
         }
-        vector<Expression> nodelist2 = CancelAdditive(Expression(Exponent));
-        for(auto & expr : nodelist2){
-            list.push_back(Expression(new ExpNode(Base,expr)));
+        for(const auto & expr : CancelAdditive(Expression(Exponent))){
+            list.push_back(Expression(new ExpNode(Base, expr.head)));
         }
-        
-    }else{
-        
+        return list;
+    }
+    if (formula.head->arity() == 1) {
         Node* argument = dynamic_cast<Arity1Node*>(formula.head)->getArg();
         vector<Expression> nodelist = CancelAdditive(Expression(argument));
-        for(auto & expr : nodelist){
-            list.push_back(Expression(new Arity1Node(argument)));
+        for(const auto & expr : CancelAdditive(Expression(argument))) {
+            list.push_back(Expression(formula.head->clone()->setArg(expr)));
         }
+        return list;
     }
-    
+    return list;
 }
+
+#endif
