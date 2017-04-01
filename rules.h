@@ -12,7 +12,7 @@ vector<Expression> CancelAdditive(const Expression& formula) {
         auto nodeAddends = dynamic_cast<AdditionNode*>(formula.head)->addends;
         for (const auto& term1 : nodeAddends) {
             for (const auto& term2 : nodeAddends) {
-                if(term1->Type() == NodeType::Negation && *(dynamic_cast<NegationNode*>(term1)->getArg()) == *term2) {
+                if(term1->Type() == NodeType::Negation && term2->isEqual(dynamic_cast<NegationNode*>(term1)->getArg())) {
                     nodeAddends.erase(term1);
                     nodeAddends.erase(term2);
                     list.push_back(Expression(new AdditionNode(nodeAddends)));
@@ -54,11 +54,11 @@ vector<Expression> CancelAdditive(const Expression& formula) {
         }
         return list;
     }
-    if (formula.head->arity() == 1) {
+    if (formula.head->isStrictArity1()) {
         Node* argument = dynamic_cast<Arity1Node*>(formula.head)->getArg();
         vector<Expression> nodelist = CancelAdditive(Expression(argument));
         for(const auto & expr : CancelAdditive(Expression(argument))) {
-            list.push_back(Expression(formula.head->clone()->setArg(expr)));
+            list.push_back(Expression(dynamic_cast<Arity1Node*>(formula.head->clone())->setArg(expr.head)));
         }
         return list;
     }
