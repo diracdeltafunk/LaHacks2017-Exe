@@ -40,12 +40,12 @@ public:
 
 class Arity0Node : public Node {
 public:
-    unsigned arity() { return 0; }
+    unsigned arity() const { return 0; }
 };
 
 class Arity1Node : public Node {
 public:
-    unsigned arity() { return 1; }
+    unsigned arity() const { return 1; }
     virtual Node* getArg() const = 0;
 };
 
@@ -110,7 +110,7 @@ public:
 
     NodeType Type() const { return NodeType::Addition; }
 
-    unsigned arity() { return addends.size(); }
+    unsigned arity() const { return addends.size(); }
 
     std::unordered_set<Node*> addends;
 };
@@ -133,7 +133,7 @@ public:
 
     NodeType Type() const { return NodeType::Multiplication; }
 
-    unsigned arity() { return factors.size(); }
+    unsigned arity() const { return factors.size(); }
 
     std::unordered_set<Node*> factors;
 };
@@ -152,7 +152,7 @@ public:
 
     NodeType Type() const { return NodeType::Negation; }
 
-    Node* getArg() { return arg; }
+    Node* getArg() const { return arg; }
 
 private:
     Node* arg;
@@ -172,7 +172,7 @@ public:
 
     NodeType Type() const { return NodeType::Inversion; }
 
-    Node* getArg() { return arg; }
+    Node* getArg() const { return arg; }
 
 private:
     Node* arg;
@@ -193,7 +193,7 @@ public:
 
     NodeType Type() const { return NodeType::Exponentiation; }
 
-    unsigned arity() { return 2; }
+    unsigned arity() const { return 2; }
 
     Node* base;
     Node* exponent;
@@ -213,7 +213,7 @@ public:
 
     NodeType Type() const { return NodeType::Logarithm; }
 
-    Node* getArg() { return arg; }
+    Node* getArg() const { return arg; }
 
 private:
     Node* arg;
@@ -233,7 +233,7 @@ public:
 
     NodeType Type() const { return NodeType::Sine; }
 
-    Node* getArg() { return arg; }
+    Node* getArg() const { return arg; }
 
 private:
     Node* arg;
@@ -253,7 +253,7 @@ public:
 
     NodeType Type() const { return NodeType::Cosine; }
 
-    Node* getArg() { return arg; }
+    Node* getArg() const { return arg; }
 
 private:
     Node* arg;
@@ -273,7 +273,7 @@ public:
 
     NodeType Type() const { return NodeType::ArcSin; }
 
-    Node* getArg() { return arg; }
+    Node* getArg() const { return arg; }
 
 private:
     Node* arg;
@@ -293,7 +293,7 @@ public:
 
     NodeType Type() const { return NodeType::ArcTan; }
 
-    Node* getArg() { return arg; }
+    Node* getArg() const { return arg; }
 
 private:
     Node* arg;
@@ -384,7 +384,5 @@ public:
 
     Node* head;
 };
-
-
 
 #endif /* expression_h */
