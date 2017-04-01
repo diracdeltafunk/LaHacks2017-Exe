@@ -160,19 +160,21 @@ public:
 
 class ExpNode : public Node {
 public:
-    ExpNode(Node* init_arg) : arg(init_arg) {}
+    ExpNode(Node* init_base, Node* init_exp) : base(init_base), exponent(init_exp) {}
 
     ~ExpNode() {
-        delete arg;
+        delete base;
+        delete exponent;
     }
 
     ExpNode* clone() const {
-        return new ExpNode(arg->clone());
+        return new ExpNode(base->clone(), exponent->clone());
     }
 
     NodeType Type() const { return NodeType::Exponentiation; }
 
-    Node* arg;
+    Node* base;
+    Node* exponent;
 };
 
 class LogNode : public Node {
