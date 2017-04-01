@@ -1,6 +1,6 @@
 //
 //  expression.h
-//  Integrations
+//  LaHacks2017
 //
 //  Created by Kyle Hess on 4/1/17.
 //  Copyright © 2017 Kyle Hess. All rights reserved.
@@ -9,11 +9,12 @@
 #ifndef expression_h
 #define expression_h
 
-#include <cstdint>
 #include <unordered_set>
 
+#include "rational.h"
+
 enum NodeType {     //Arity:
-    ConstantQ,      //1
+    ConstantQ,      //0
     ConstantPi,     //0
     ConstantE,      //0
     Identity,       //0
@@ -34,11 +35,23 @@ public:
     virtual ~Node();
     virtual Node* clone() const = 0;
     virtual NodeType Type() const = 0;
+    virtual unsigned arity() const = 0;
 };
 
-class RationalNode : public Node {
+class Arity0Node : public Node {
 public:
-    RationalNode(int init_num, int init_den) : num(init_num), den(init_den) {}
+    unsigned arity() { return 0; }
+};
+
+class Arity1Node : public Node {
+public:
+    unsigned arity() { return 1; }
+    virtual Node* getArg() const = 0;
+};
+
+class RationalNode : public Arity0Node {
+public:
+    RationalNode(Rational init_q) : q(init_q) {}
 
     RationalNode* clone() const {
         return new RationalNode(*this);
@@ -46,16 +59,13 @@ public:
 
     NodeType Type() const { return NodeType::ConstantQ; }
 
-    // Overload == operator
-    bool operator==(RationalNode q) {
-        return (num * q.den) == (den * q.num);
-    }
+    Rational getNumber() const { return q; }
 
-    int num;
-    int den;
+private:
+    Rational q;
 };
 
-class PiNode : public Node {
+class PiNode : public Arity0Node {
 public:
     NodeType Type() const { return NodeType::ConstantPi; }
 
@@ -64,7 +74,7 @@ public:
     }
 };
 
-class ENode : public Node {
+class ENode : public Arity0Node {
 public:
     NodeType Type() const { return NodeType::ConstantE; }
 
@@ -73,7 +83,7 @@ public:
     }
 };
 
-class IdentityNode : public Node {
+class IdentityNode : public Arity0Node {
 public:
     NodeType Type() const { return NodeType::Identity; }
 
@@ -100,6 +110,8 @@ public:
 
     NodeType Type() const { return NodeType::Addition; }
 
+    unsigned arity() { return addends.size(); }
+
     std::unordered_set<Node*> addends;
 };
 
@@ -121,10 +133,12 @@ public:
 
     NodeType Type() const { return NodeType::Multiplication; }
 
+    unsigned arity() { return factors.size(); }
+
     std::unordered_set<Node*> factors;
 };
 
-class NegationNode : public Node {
+class NegationNode : public Arity1Node {
 public:
     NegationNode(Node* init_arg) : arg(init_arg) {}
 
@@ -138,10 +152,13 @@ public:
 
     NodeType Type() const { return NodeType::Negation; }
 
+    Node* getArg() { return arg; }
+
+private:
     Node* arg;
 };
 
-class InversionNode : public Node {
+class InversionNode : public Arity1Node {
 public:
     InversionNode(Node* init_arg) : arg(init_arg) {}
 
@@ -155,6 +172,9 @@ public:
 
     NodeType Type() const { return NodeType::Inversion; }
 
+    Node* getArg() { return arg; }
+
+private:
     Node* arg;
 };
 
@@ -173,11 +193,13 @@ public:
 
     NodeType Type() const { return NodeType::Exponentiation; }
 
+    unsigned arity() { return 2; }
+
     Node* base;
     Node* exponent;
 };
 
-class LogNode : public Node {
+class LogNode : public Arity1Node {
 public:
     LogNode(Node* init_arg) : arg(init_arg) {}
 
@@ -191,10 +213,13 @@ public:
 
     NodeType Type() const { return NodeType::Logarithm; }
 
+    Node* getArg() { return arg; }
+
+private:
     Node* arg;
 };
 
-class SinNode : public Node {
+class SinNode : public Arity1Node {
 public:
     SinNode(Node* init_arg) : arg(init_arg) {}
 
@@ -208,10 +233,13 @@ public:
 
     NodeType Type() const { return NodeType::Sine; }
 
+    Node* getArg() { return arg; }
+
+private:
     Node* arg;
 };
 
-class CosNode : public Node {
+class CosNode : public Arity1Node {
 public:
     CosNode(Node* init_arg) : arg(init_arg) {}
 
@@ -225,10 +253,13 @@ public:
 
     NodeType Type() const { return NodeType::Cosine; }
 
+    Node* getArg() { return arg; }
+
+private:
     Node* arg;
 };
 
-class ArcSinNode : public Node {
+class ArcSinNode : public Arity1Node {
 public:
     ArcSinNode(Node* init_arg) : arg(init_arg) {}
 
@@ -242,10 +273,13 @@ public:
 
     NodeType Type() const { return NodeType::ArcSin; }
 
+    Node* getArg() { return arg; }
+
+private:
     Node* arg;
 };
 
-class ArcTanNode : public Node {
+class ArcTanNode : public Arity1Node {
 public:
     ArcTanNode(Node* init_arg) : arg(init_arg) {}
 
@@ -259,6 +293,9 @@ public:
 
     NodeType Type() const { return NodeType::ArcTan; }
 
+    Node* getArg() { return arg; }
+
+private:
     Node* arg;
 };
 
