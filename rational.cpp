@@ -89,6 +89,32 @@ Rational Rational::operator-() const {
     return temp;
 }
 
+bool Rational::operator==(const Rational& other) const {
+    return (numerator * other.denominator) == (other.numerator * denominator);
+}
+
+bool Rational::operator!=(const Rational& other) const {
+    return !(*this == other);
+}
+
+bool Rational::operator<(const Rational& other) const {
+    Rational difference = *this - other;
+    difference.simplify();
+    return difference.numerator < 0;
+}
+
+bool Rational::operator>(const Rational& other) const {
+    return !(*this <= other);
+}
+
+bool Rational::operator<=(const Rational& other) const {
+    return (*this < other) || (*this == other);
+}
+
+bool Rational::operator>=(const Rational& other) const {
+    return !(*this < other);
+}
+
 int64_t gcd(int64_t a, int64_t b) {
     int64_t aa = std::abs(a);
     int64_t ab = std::abs(b);
