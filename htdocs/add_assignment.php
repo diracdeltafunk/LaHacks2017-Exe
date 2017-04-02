@@ -1,4 +1,4 @@
-<?php
+<?phpphp
 
 	$user = 'root';
 	$password = 'root';
@@ -20,7 +20,7 @@
 	{
 		if($prb != "")
 		{
-			$add = $_POST["parts"].":".$_POST["exp"].":".$_POST["log"].":".$_POST["trig"].$_POST["invtrig"].":".$_POST["number"]."|";
+			$add = $_POST["parts"].":".$_POST["exp"].":".$_POST["log"].":".$_POST["trig"].":".$_POST["invtrig"].":".$_POST["number"].":".$_POST["diff"]."|";
 			$result = mysqli_query($conn,"UPDATE users SET assign=CONCAT(assign, '$add') WHERE id='" . $prb . "'");
 			$result = mysqli_query($conn,"UPDATE users SET score=CONCAT(score, '|') WHERE id='" . $prb . "'");
 		}

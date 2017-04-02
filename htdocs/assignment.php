@@ -104,14 +104,15 @@
     <form>
 		<div class="form-group">
 		  <div class="col-10">
-			<input id=hidd1 type="hidden" value="0" name="parts">
-			<input id=hidd2 type="hidden" value="0" name="exp">
-			<input id=hidd3 type="hidden" value="0" name="log">
-			<input id=hidd4 type="hidden" value="0" name="trig">
-			<input id=hidd5 type="hidden" value="0" name="invtrig">
-			<input id=hidd type="hidden" value="0" name="num">
-			<input id=correct type="hidden" value="0" name="num1">
-			<input id=ind type="hidden" value="0" name="num2">
+			<input id="hidd1" type="hidden" value="0" name="parts">
+			<input id="hidd2" type="hidden" value="0" name="exp">
+			<input id="hidd3" type="hidden" value="0" name="log">
+			<input id="hidd4" type="hidden" value="0" name="trig">
+			<input id="hidd5" type="hidden" value="0" name="invtrig">
+			<input id="hidd" type="hidden" value="0" name="num">
+			<input id="diff" type="hidden" value="1" name="num">
+			<input id="correct" type="hidden" value="0" name="num1">
+			<input id="ind" type="hidden" value="0" name="num2">
 		  </div>
 		</div>
 	</form>
@@ -139,15 +140,17 @@
 		$ind = intval($_GET["num"]);
 		echo "<script> $(\"#ind\").val($ind); </script>";
 		$a = explode(":", $prb);
-		for ($i = 0; $i < sizeof($a) - 1; $i += 1)
+		for ($i = 0; $i < sizeof($a) - 2; $i += 1)
 		{		
 			$i1 = strval($i + 1);
 			$val = $a[$i];
 			echo "<script> \$(\"#hidd\" + $i1).val($val) </script>";
 		}
-		$li = sizeof($a) - 1;
+		$li = sizeof($a) - 2;
 		$val = $a[$li];
 		echo "<script> \$(\"#hidd\").val($val) </script>";
+		$val1 = $a[$li + 1];
+		echo "<script> \$(\"#diff\").val($val1) </script>";
 		#IMPORTANT!!!!!!!
 	?>
     

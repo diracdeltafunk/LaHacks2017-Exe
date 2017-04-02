@@ -28,7 +28,7 @@ $(document).ready(function(){
    		 });
 	}
 	
-	var bnum = 4;
+	var bnum = 5;
     $("#button1").click(function(){ 
 		$("#button1").toggleClass("btn-success");
 		if($("#hidd1").val() == "1")
@@ -51,6 +51,13 @@ $(document).ready(function(){
 			$("#hidd3").val("1");
 	});
  	$("#button4").click(function(){ 
+		$("#button4").toggleClass("btn-success");
+		if($("#hidd4").val() == "1")
+			$("#hidd4").val("0");
+		else
+			$("#hidd4").val("1");
+	});
+	$("#button5").click(function(){ 
 		$("#button4").toggleClass("btn-success");
 		if($("#hidd4").val() == "1")
 			$("#hidd4").val("0");

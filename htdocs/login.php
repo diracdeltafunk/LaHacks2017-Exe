@@ -1,4 +1,4 @@
-<?php
+<?phpphp
 
 $user = 'root';
 $password = 'root';
