@@ -39,7 +39,7 @@ public:
     virtual bool isStrictArity0() const { return false; }
     virtual bool isStrictArity1() const { return false; }
     virtual bool hasType(const NodeType&) const = 0;
-    bool hasPattern() const { return hasType(NodeType::PatternMatch) };
+    bool hasPattern() const { return hasType(NodeType::PatternMatch); };
     virtual bool isEqual(Node const * const) const = 0;
     bool operator==(const Node& other) const { return other.isEqual(this); }
 };
@@ -53,7 +53,7 @@ public:
     unsigned arity() const { return 0; }
     bool isStrictArity0() const { return true; }
     bool hasPattern() const { return false; }
-    bool hasType(const NodeType& t) { return t == Type(); }
+    bool hasType(const NodeType& t) const { return t == Type(); }
 };
 
 class Arity1Node : public Node {
@@ -66,7 +66,7 @@ public:
     bool isEqual(Node const * const other) const {
         return (other->Type() == this->Type()) && (getArg()->isEqual(dynamic_cast<Arity1Node const * const>(other)->getArg()));
     }
-    bool hasType(const NodeType& t) {
+    bool hasType(const NodeType& t) const {
         return (t == Type()) || (t == getArg()->Type());
     }
 };
