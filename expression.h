@@ -529,7 +529,7 @@ public:
 
     Expression& operator=(Expression other);
 
-    Expression(Expression&& other);
+    //Expression(Expression&& other);
 
     ~Expression();
 

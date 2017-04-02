@@ -3,7 +3,7 @@
 using namespace std;
 
 vector<vector<pair<int, Expression>>> PatternList(const Expression& formula, const Expression& pattern) {
-    vector< vector<pair <int, Expression>> > list;
+    vector<vector<pair<int, Expression>>> list;
 
     if (formula.head->Type() != pattern.head->Type()
        || pattern.head->arity() != formula.head->arity()){
@@ -31,7 +31,7 @@ vector<vector<pair<int, Expression>>> PatternList(const Expression& formula, con
                 (dynamic_cast<AdditionNode*>(patternClone.head)->addends).erase(PatternFirst);
 
                 vector<vector<pair <int, Expression>>> V = PatternList(Expression(elmt->clone()), Expression(PatternFirst->clone()));
-                vector<vector<pair <int, Expression>>> U = PatternList(formulaClone,patternClone);
+                vector<vector<pair <int, Expression>>> U = PatternList(formulaClone, patternClone);
 
                 for(const auto& v: V){
                     for(const auto& u: U){
@@ -61,7 +61,7 @@ vector<vector<pair<int, Expression>>> PatternList(const Expression& formula, con
     else if (formula.head->Type() == NodeType::Multiplication) {
         auto FormulaList = dynamic_cast<ProductNode*>(formula.head)->factors;
         auto PatternFirst = *((dynamic_cast<ProductNode*>(pattern.head)->factors).begin());
-        for(const auto& elmt: FormulaList){
+        for(const auto& elmt : FormulaList){
             ((elmt->arity() == PatternFirst->arity()
               && elmt->Type() == PatternFirst->Type())
              || PatternFirst->Type()== NodeType::PatternMatch){
@@ -125,7 +125,6 @@ vector<vector<pair<int, Expression>>> PatternList(const Expression& formula, con
                         }
                 if(flag)
                     list.push_back(add);
-
             }
         }
 

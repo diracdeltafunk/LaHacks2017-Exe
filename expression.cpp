@@ -28,10 +28,10 @@ Expression& Expression::operator=(Expression other) {
     return *this;
 }
 
-Expression::Expression(Expression&& other) {
+/*Expression::Expression(Expression&& other) {
     head = nullptr;
     swap(*this, other);
-}
+}*/
 
 Expression::~Expression() {
     delete head;
