@@ -70,7 +70,7 @@ public:
         return (other->Type() == this->Type()) && (getArg()->isEqual(dynamic_cast<Arity1Node const * const>(other)->getArg()));
     }
     bool hasType(const NodeType& t) const {
-        return (t == Type()) || (t == getArg()->Type());
+        return (t == Type()) || (getArg()->hasType(t));
     }
     virtual std::string getString() const = 0;
 };
