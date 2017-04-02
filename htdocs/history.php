@@ -71,7 +71,7 @@
 						</tr>
 					</thead>
 					<tbody>
-						<?
+						<?php
 							$user = 'root';
 							$password = 'root';
 							$db = 'calc';
