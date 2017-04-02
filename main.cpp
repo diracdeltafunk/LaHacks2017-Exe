@@ -1,24 +1,20 @@
 #include <iostream>
 #include <set>
-#include "rules.hpp"
+#include "expression.h"
 
 using namespace std;
 
+Expression id_f(Expression e) {
+	if (e.head->Type() == NodeType::Negation) {
+		return id_f(Expression(dynamic_cast<NegationNode*>(e.head)->getArg()));
+	}
+	return e;
+}
+
 int main()
 {
-//	RationalNode l(Rational(1, 2)), r(Rational(1, 1));
-	set<Node*> c;
-	c.insert(new SinNode(new IdentityNode));
-	c.insert(new NegationNode(new SinNode(new IdentityNode)));
-	c.insert(new NegationNode(new SinNode(new IdentityNode)));
-	Expression expr(new AdditionNode(c));
-	set<Node*> cp;
-	cp.insert(new PatternMatchNode(0));
-	
-	cp.insert(new NegationNode(new PatternMatchNode(0)));
-	
-	Expression exprp(new AdditionNode(cp));
-	vector <vector <pair <int, Expression>>> v = PatternList(expr, exprp);
-	cout << v.size() << "\n";
+	NegationNode* a = new NegationNode(new RationalNode(Rational(1, 2)));
+	Expression y(a);
+	cout << id_f(y) << endl;
     return 0;
 }
