@@ -42,6 +42,8 @@ public:
     bool hasPattern() const { return hasType(NodeType::PatternMatch); }
     virtual bool isEqual(Node const * const) const = 0;
     bool operator==(const Node& other) const { return other.isEqual(this); }
+    // Gives an expression as a string
+    virtual std::string getString() const = 0;
 };
 
 typedef std::unordered_set<Node*> collection_t;
@@ -54,6 +56,7 @@ public:
     bool isStrictArity0() const { return true; }
     bool hasPattern() const { return false; }
     bool hasType(const NodeType& t) const { return t == Type(); }
+    virtual std::string getString() const = 0;
 };
 
 class Arity1Node : public Node {
@@ -69,6 +72,7 @@ public:
     bool hasType(const NodeType& t) const {
         return (t == Type()) || (t == getArg()->Type());
     }
+    virtual std::string getString() const = 0;
 };
 
 class RationalNode : public Arity0Node {
@@ -86,6 +90,11 @@ public:
     bool isEqual(Node const * const other) const {
         return (other->Type() == NodeType::ConstantQ) && (dynamic_cast<RationalNode const * const>(other)->getNumber() == q);
     }
+    virtual std::string getString() const {
+        std::ostringstream myStream;
+        myStream << "\\frac{" << q.getNumerator() << "}{" << q.getDenominator() << "}";
+        return myStream.str();
+    }
 
 private:
     Rational q;
@@ -102,6 +111,8 @@ public:
     bool isEqual(Node const * const other) const {
         return other->Type() == NodeType::ConstantPi;
     }
+    
+    virtual std::string getString() const { return "\\pi"; }
 };
 
 class ENode : public Arity0Node {
@@ -115,6 +126,8 @@ public:
     bool isEqual(Node const * const other) const {
         return other->Type() == NodeType::ConstantE;
     }
+    
+    virtual std::string getString() const { return "e"; }
 };
 
 class IdentityNode : public Arity0Node {
@@ -128,6 +141,8 @@ public:
     bool isEqual(Node const * const other) const {
         return other->Type() == NodeType::Identity;
     }
+    
+    virtual std::string getString() const { return "x"; }
 };
 
 class AdditionNode : public Node {
@@ -164,6 +179,26 @@ public:
         if ((other->Type() != NodeType::Addition) || (arity() != other->arity()))
             return false;
         return same_collection(addends, dynamic_cast<AdditionNode const * const>(other)->addends);
+    }
+    
+    virtual std::string getString() const {
+        std::ostringstream myStream;
+        bool firstElement = true;
+        
+        for (auto x : addends) {
+            if (!firstElement)
+                myStream << " + ";
+            else firstElement = false;
+            
+            if (x->Type() == NodeType::Addition || x->Type() == NodeType::Multiplication) {
+                myStream << "\\left(" + x->getString() << "\\right)";
+            }
+            else {
+                myStream << x->getString();
+            }
+        }
+        
+        return myStream.str();
     }
 
     collection_t addends;
@@ -204,6 +239,26 @@ public:
             return false;
         return same_collection(factors, dynamic_cast<ProductNode const * const>(other)->factors);
     }
+    
+    virtual std::string getString() const {
+        std::ostringstream myStream;
+        bool firstElement = true;
+        
+        for (auto x : factors) {
+            if (!firstElement)
+                myStream << " \\cdot ";
+            else firstElement = false;
+            
+            if (x->Type() == NodeType::Addition || x->Type() == NodeType::Multiplication) {
+                myStream << "\\left(" + x->getString() << "\\right)";
+            }
+            else {
+                myStream << x->getString();
+            }
+        }
+        
+        return myStream.str();
+    }
 
     collection_t factors;
 };
@@ -224,6 +279,15 @@ public:
 
     Node* getArg() const { return arg; }
     Node* setArg(Node* newArg) { delete arg; arg = newArg; return this; }
+    
+    virtual std::string getString() const {
+        if (arg->Type() == NodeType::Addition || arg->Type() == NodeType::Multiplication) {
+            return "-\\left(" + arg->getString() + "\\right)";
+        }
+        else {
+            return "-" + arg->getString();
+        }
+    }
 
 private:
     Node* arg;
@@ -245,6 +309,10 @@ public:
 
     Node* getArg() const { return arg; }
     Node* setArg(Node* newArg) { delete arg; arg = newArg; return this; }
+    
+    virtual std::string getString() const {
+        return "\\frac{1}{" + arg->getString() + "}";
+    }
 
 private:
     Node* arg;
@@ -274,6 +342,22 @@ public:
     bool isEqual(Node const * const other) const {
         return (other->Type() == NodeType::Exponentiation) && base->isEqual(dynamic_cast<ExpNode const * const>(other)->base) && exponent->isEqual(dynamic_cast<ExpNode const * const>(other)->exponent);
     }
+    
+    virtual std::string getString() const {
+        std::ostringstream myStream;
+        
+        if (base->Type() == NodeType::Addition || base->Type() == NodeType::Multiplication || base->Type() == NodeType::Exponentiation) {
+            myStream << "\\left(" + base->getString() + "\\right)";
+        }
+        else {
+            myStream << base->getString();
+        }
+        
+        myStream << "^";
+        myStream << "{" + exponent->getString() + "}";
+        
+        return myStream.str();
+    }
 
     Node* base;
     Node* exponent;
@@ -295,6 +379,10 @@ public:
 
     Node* getArg() const { return arg; }
     Node* setArg(Node* newArg) { delete arg; arg = newArg; return this; }
+    
+    virtual std::string getString() const {
+        return "\\log\\left(" + arg->getString() + "\\right)";
+    }
 
 private:
     Node* arg;
@@ -316,6 +404,10 @@ public:
 
     Node* getArg() const { return arg; }
     Node* setArg(Node* newArg) { delete arg; arg = newArg; return this; }
+    
+    virtual std::string getString() const {
+        return "\\sin\\left(" + arg->getString() + "\\right)";
+    }
 
 private:
     Node* arg;
@@ -337,6 +429,10 @@ public:
 
     Node* getArg() const { return arg; }
     Node* setArg(Node* newArg) { delete arg; arg = newArg; return this; }
+    
+    virtual std::string getString() const {
+        return "\\cos\\left(" + arg->getString() + "\\right)";
+    }
 
 private:
     Node* arg;
@@ -358,6 +454,10 @@ public:
 
     Node* getArg() const { return arg; }
     Node* setArg(Node* newArg) { delete arg; arg = newArg; return this; }
+    
+    virtual std::string getString() const {
+        return "\\arcsin\\left(" + arg->getString() + "\\right)";
+    }
 
 private:
     Node* arg;
@@ -379,6 +479,10 @@ public:
 
     Node* getArg() const { return arg; }
     Node* setArg(Node* newArg) { delete arg; arg = newArg; return this; }
+    
+    virtual std::string getString() const {
+        return "\\arctan(" + arg->getString() + ")";
+    }
 
 private:
     Node* arg;
@@ -405,6 +509,10 @@ public:
     }
 
     int getIndex() const { return index; }
+    
+    virtual std::string getString() const {
+        return "WHAT ARE YOU DOING YOU CAN'T PRINT PATTERN NODES";
+    }
 
 private:
     int index;
@@ -431,6 +539,8 @@ public:
     Expression operator-(const Expression&) const;
 
     Expression operator*(const Expression&) const;
+    
+    Expression operator/(const Expression& g) const;
 
     bool operator==(const Expression&) const;
 
@@ -440,5 +550,12 @@ public:
 
     Node* head;
 };
+
+// Printing!!
+inline
+std::ostream& operator<<(std::ostream& os, Expression f) {
+    os << (f.head)->getString();
+    return os;
+}
 
 #endif /* expression_h */

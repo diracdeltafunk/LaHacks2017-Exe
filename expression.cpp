@@ -100,6 +100,10 @@ bool Expression::operator!=(const Expression& other) const {
     return !(*this == other);
 }
 
+Expression Expression::operator/(const Expression& g) const {
+    return *this * Expression(compose(new InversionNode(new IdentityNode()),g.head));
+}
+
 bool Expression::isPattern() const {
     return head->hasPattern();
 }
