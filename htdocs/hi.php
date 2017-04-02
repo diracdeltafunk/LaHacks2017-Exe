@@ -47,7 +47,7 @@
             <li><a id="group" href="group.php" style="display:none">Student group</a></li>
             <li class="dropdown"><a class="dropdown-toggle" id="assigns" data-toggle="dropdown" href="#" style="display:none">Assignments<span class="caret"></span></a>
             	<ul class="dropdown-menu">
-					<?
+					<?php
 						$user = 'root';
 						$password = 'root';
 						$db = 'calc';
