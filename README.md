@@ -1,2 +1,2 @@
 # LaHacks2017-Exe
-Generates difficult integrals
+Generates difficult ~~integrals~~ derivatives?
