@@ -36,6 +36,7 @@ public:
     virtual Node* clone() const = 0;
     virtual NodeType Type() const = 0;
     virtual unsigned arity() const = 0;
+    virtual bool isStrictArity0() const { return false; }
     virtual bool isStrictArity1() const { return false; }
     virtual bool hasPattern() const = 0;
     virtual bool isEqual(Node const * const) const = 0;
@@ -63,6 +64,7 @@ bool same_collection(collection_t a, collection_t b) {
 class Arity0Node : public Node {
 public:
     unsigned arity() const { return 0; }
+    bool isStrictArity0() const { return 0; } 
     bool hasPattern() const { return false; }
 };
 
