@@ -147,7 +147,11 @@ vector<Rule*> generateSimps() {
 		Rule* R12 = new Rule(natmult,repad);
 		SimpList.push_back(R12);
 		
-		Expression reppr(new ProductNode(ra));
+        set<Node*> ra2;
+        for(int i = 0; i < k; i++){
+            ra2.insert(new PatternMatchNode(0));
+        }
+		Expression reppr(new ProductNode(ra2));
 		Expression natexp(new ExpNode(new PatternMatchNode(0), new RationalNode(Rational(k,1)) ));
 		if(k > 0){
 			Rule* R13 = new Rule(reppr,natexp);
