@@ -15,6 +15,13 @@ vector<vector<pair<int, Expression>>> PatternList(const Expression& formula, con
             return list;
         }
     }
+    
+    else if (formula.head->arity() == 0){
+        if(*(formula.head) == *(pattern.head)){
+            vector<pair<int, Expression>> xxx;
+            list.push_back(xxx);
+        }
+    }
 
     else if (formula.head->Type() == NodeType::Addition) {
         auto FormulaList = dynamic_cast<AdditionNode*>(formula.head)->addends;
@@ -134,14 +141,15 @@ vector<vector<pair<int, Expression>>> PatternList(const Expression& formula, con
         list = PatternList(Expression(dynamic_cast<Arity1Node*>(formula.head)->getArg()->clone()), Expression(dynamic_cast<Arity1Node*>(pattern.head)->getArg()->clone()));
     }
 
-    else if (formula.head->isStrictArity0()){
-        if(*(formula.head) == *(pattern.head)){
-            vector<pair<int, Expression>> xxx;
-            list.push_back(xxx);
-        }
-    }
-
     return list;
+}
+
+Expression replace(vector<pair<int, Expression>> replacements, Expression Base){
+    if(base.head->Type() == NodeType::PatternMatch){
+        for(const auto& v:replacements){
+            if(v.first == dynamic_cast<*PatternMatchNode>(base.head)->getIndex())
+                }
+    }
 }
 
 vector<Expression> Rule::Apply(const Expression& formula) {
