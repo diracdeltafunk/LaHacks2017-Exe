@@ -65,7 +65,7 @@
     		<div class="col-md-3">
 				<h2>Student group:</h2>
 				<ul style="padding-top:20px" class="list-group">
-					<?
+					<?php
 						$user = 'root';
 							$password = 'root';
 							$db = 'calc';
@@ -138,7 +138,7 @@
 					<button id="add" type="submit" class="btn btn-success">Submit</button>
 				
 				</form>
-				<?
+				<?php
 					if(isset($_GET["success"]))
 					{
 						if($_GET["success"] == 2)
@@ -181,7 +181,7 @@
 					
 					</form>
 				</div>
-				<?
+				<?php
 					if(isset($_GET["success"]))
 					{
 						if($_GET["success"] == 1)
@@ -205,7 +205,7 @@
 		</div>
 		<div class="row" style="padding-top:50px">
 			<table style="padding-top:20px; width:auto; font-size:20px;" class="table table-bordered">
-				<?
+				<?php
 					$user = 'root';
 					$password = 'root';
 					$db = 'calc';
