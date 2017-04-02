@@ -1,3 +1,6 @@
+#ifndef rational_h
+#define rational_h
+
 #include <cstdint>
 
 class Rational {
@@ -34,3 +37,5 @@ private:
     int64_t denominator;
     void simplify();
 };
+
+#endif
