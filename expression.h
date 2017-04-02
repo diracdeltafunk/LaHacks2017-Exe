@@ -32,7 +32,7 @@ enum NodeType {     //Arity:
 
 class Node {
 public:
-    virtual ~Node();
+    virtual ~Node() {};
     virtual Node* clone() const = 0;
     virtual NodeType Type() const = 0;
     virtual unsigned arity() const = 0;
@@ -40,31 +40,17 @@ public:
     virtual bool isStrictArity1() const { return false; }
     virtual bool hasPattern() const = 0;
     virtual bool isEqual(Node const * const) const = 0;
-    bool operator==(const Node& other) const {
-        return other.isEqual(this);
-    }
+    bool operator==(const Node& other) const { return other.isEqual(this); }
 };
 
 typedef std::unordered_set<Node*> collection_t;
 
-bool same_collection(collection_t a, collection_t b) {
-    for (const auto& x : a) {
-        for (const auto& y : b) {
-            if (x->isEqual(y)) {
-                a.erase(x);
-                b.erase(y);
-                return same_collection(a,b);
-            }
-        }
-        return false;
-    }
-    return b.empty();
-}
+bool same_collection(collection_t a, collection_t b);
 
 class Arity0Node : public Node {
 public:
     unsigned arity() const { return 0; }
-    bool isStrictArity0() const { return 0; } 
+    bool isStrictArity0() const { return true; }
     bool hasPattern() const { return false; }
 };
 
@@ -122,7 +108,7 @@ public:
     }
 
     bool isEqual(Node const * const other) const {
-        return other->Type() == NodeType::ConstantPi;
+        return other->Type() == NodeType::ConstantE;
     }
 };
 
@@ -162,9 +148,9 @@ public:
     bool hasPattern() const {
         for (const auto& a : addends) {
             if (a->hasPattern())
-                return false;
+                return true;
         }
-        return true;
+        return false;
     }
 
     bool isEqual(Node const * const other) const {
@@ -199,9 +185,9 @@ public:
     bool hasPattern() const {
         for (const auto& a : factors) {
             if (a->hasPattern())
-                return false;
+                return true;
         }
-        return true;
+        return false;
     }
 
     bool isEqual(Node const * const other) const {
@@ -417,88 +403,25 @@ class Expression {
 public:
     Expression(Node* init_head) : head(init_head) {}
 
-    friend void swap(Expression& first, Expression& second) {
-        using std::swap;
-        swap(first.head, second.head);
-    }
+    friend void swap(Expression& first, Expression& second);
 
-    Expression(const Expression& other) {
-        head = other.head->clone();
-    }
+    Expression(const Expression& other);
 
-    Expression& operator=(Expression other) {
-        swap(*this, other);
-        return *this;
-    }
+    Expression& operator=(Expression other);
 
-    Expression(Expression&& other) {
-        head = nullptr;
-        swap(*this, other);
-    }
+    Expression(Expression&& other);
 
-    ~Expression() {
-        delete head;
-    }
+    ~Expression();
 
-    Expression operator+(Expression g) {
-        // This set will hold the addends in the head addition of our eventual expression
-        collection_t newAddends;
+    Expression operator+(const Expression&) const;
 
-        // Test if addition is already one of the operations in f and/or g
-        if (head->Type() == NodeType::Addition) {
-            for (auto x : dynamic_cast<AdditionNode*>(head)->addends) newAddends.insert(x);
-        }
-        else {
-            newAddends.insert(head);
-        }
-        if (g.head->Type() == NodeType::Addition) {
-            for (auto x : dynamic_cast<AdditionNode*>(g.head)->addends) newAddends.insert(x);
-        }
-        else {
-            newAddends.insert(g.head);
-        }
+    Expression operator-() const;
 
-        AdditionNode* newHead = new AdditionNode(newAddends);
+    Expression operator-(const Expression&) const;
 
-        return Expression(newHead);
-    }
+    Expression operator*(const Expression& g) const;
 
-    Expression operator-() {
-        NegationNode* newHead = new NegationNode(head);
-        // Distribute negation over addition - not yet implemented
-        //if (head->Type() == NodeType::Addition)
-
-        return Expression(newHead);
-    }
-    Expression operator-(Expression g) {
-        return *this + (-g);
-    }
-    Expression operator*(Expression g) {
-        // This set will hold the addends in the head addition of our eventual expression
-        collection_t newFactors;
-
-        // Test if addition is already one of the operations in f and/or g
-        if (head->Type() == NodeType::Multiplication) {
-            for (auto x : dynamic_cast<ProductNode*>(head)->factors) newFactors.insert(x);
-        }
-        else {
-            newFactors.insert(head);
-        }
-        if (g.head->Type() == NodeType::Multiplication) {
-            for (auto x : dynamic_cast<ProductNode*>(g.head)->factors) newFactors.insert(x);
-        }
-        else {
-            newFactors.insert(g.head);
-        }
-
-        ProductNode* newHead = new ProductNode(newFactors);
-
-        return Expression(newHead);
-    }
-
-    bool isPattern() const {
-        return head->hasPattern();
-    }
+    bool isPattern() const;
 
     Node* head;
 };
