@@ -1,6 +1,6 @@
 CC=clang++
 CFLAGS=-O2 -std=c++14
-DEPS = expression.h rational.h rules.h
+DEPS = expression.h rational.h rules.h rand_func.h
 OBJ = main.o expression.o rational.o rules.o
 
 %.o: %.cpp $(DEPS)

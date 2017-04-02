@@ -1,6 +1,6 @@
 #include "expression.h"
 
-bool same_collection(collection_t a, collection_t b) {
+bool same_collection(std::set<Node*> a, std::set<Node*> b) {
     if (a.empty())
         return b.empty();
     auto x = *(a.begin());
@@ -39,7 +39,7 @@ Expression::~Expression() {
 
 Expression Expression::operator+(const Expression& g) const {
     // This set will hold the addends in the head addition of our eventual expression
-    collection_t newAddends;
+    std::set<Node*> newAddends;
 
     // Test if addition is already one of the operations in f and/or g
     if (head->Type() == NodeType::Addition) {
@@ -72,7 +72,7 @@ Expression Expression::operator-(const Expression& g) const {
 
 Expression Expression::operator*(const Expression& g) const {
     // This set will hold the addends in the head addition of our eventual expression
-    collection_t newFactors;
+    std::set<Node*> newFactors;
 
     // Test if addition is already one of the operations in f and/or g
     if (head->Type() == NodeType::Multiplication) {

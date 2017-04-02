@@ -9,7 +9,7 @@
 #ifndef expression_h
 #define expression_h
 
-#include <unordered_set>
+#include <set>
 #include <sstream>
 #include "rational.h"
 
@@ -47,9 +47,7 @@ public:
     virtual std::string getString() const = 0;
 };
 
-typedef std::unordered_set<Node*> collection_t;
-
-bool same_collection(collection_t a, collection_t b);
+bool same_collection(std::set<Node*> a, std::set<Node*> b);
 
 class Arity0Node : public Node {
 public:
@@ -153,7 +151,7 @@ public:
 
 class AdditionNode : public Node {
 public:
-    AdditionNode(collection_t init_addends) : addends(init_addends) {}
+    AdditionNode(std::set<Node*> init_addends) : addends(init_addends) {}
 
     ~AdditionNode() {
         for (auto x : addends)
@@ -161,7 +159,7 @@ public:
     }
 
     AdditionNode* clone() const {
-        collection_t newAddends;
+        std::set<Node*> newAddends;
         for (const auto& a : addends)
             newAddends.insert(a->clone());
         return new AdditionNode(newAddends);
@@ -207,12 +205,12 @@ public:
         return myStream.str();
     }
 
-    collection_t addends;
+    std::set<Node*> addends;
 };
 
 class ProductNode : public Node {
 public:
-    ProductNode(collection_t init_factors) : factors(init_factors) {}
+    ProductNode(std::set<Node*> init_factors) : factors(init_factors) {}
 
     ~ProductNode() {
         for (auto x : factors)
@@ -220,7 +218,7 @@ public:
     }
 
     ProductNode* clone() const {
-        collection_t newFactors;
+        std::set<Node*> newFactors;
         for (auto f : factors)
             newFactors.insert(f->clone());
         return new ProductNode(newFactors);
@@ -266,7 +264,7 @@ public:
         return myStream.str();
     }
 
-    collection_t factors;
+    std::set<Node*> factors;
 };
 
 class NegationNode : public Arity1Node {
@@ -596,13 +594,13 @@ Node* compose(Node const * const f, Node const * const g) {
         return new ExpNode(newBase, newExponent);
     }
     if (f->Type() == NodeType::Addition) {
-        std::unordered_set<Node*> addends;
+        std::set<Node*> addends;
         for (auto x : dynamic_cast<const AdditionNode*>(f)->addends)
             addends.insert(compose(x,g));
         return new AdditionNode(addends);
     }
     if (f->Type() == NodeType::Multiplication) {
-        std::unordered_set<Node*> factors;
+        std::set<Node*> factors;
         for (auto x : dynamic_cast<const ProductNode*>(f)->factors)
             factors.insert(compose(x,g));
         return new ProductNode(factors);
@@ -659,7 +657,7 @@ Node* diff(Node const * const head) {
     // Checks if an argument is constant and if so just leaves it out
     // so that we don't have too many + 0's
     if (head->Type() == NodeType::Addition) {
-        std::unordered_set<Node*> addends;
+        std::set<Node*> addends;
         for (auto x : dynamic_cast<const AdditionNode*>(head)->addends) {
             if (!isConstant(x))
                 addends.insert(diff(x));
@@ -670,10 +668,10 @@ Node* diff(Node const * const head) {
     // Product rule
     // Leaves out additions of zero (i.e. c * x goes to c * 1 and not 0 * x + c * 1)
     if (head->Type() == NodeType::Multiplication) {
-        std::unordered_set<Node*> addends;
+        std::set<Node*> addends;
         for (auto x : dynamic_cast<const ProductNode*>(head)->factors) {
             if (!isConstant(x)) {
-                std::unordered_set<Node*> factors;
+                std::set<Node*> factors;
                 for (auto y : dynamic_cast<const ProductNode*>(head)->factors) {
                     if (x == y) factors.insert(diff(y));
                     else factors.insert(y->clone());
@@ -692,7 +690,7 @@ Node* diff(Node const * const head) {
     // However, if we create integration problems we might want to have the
     // algorithm do things in different ways or at least store them as different u-subs and such.
     if (head->isStrictArity1() && dynamic_cast<const Arity1Node*>(head)->getArg()->Type() != NodeType::Identity) {
-        std::unordered_set<Node*> factors;
+        std::set<Node*> factors;
         // Do chain rule on f(g(x))
         Node* g = (dynamic_cast<const Arity1Node*>(head)->getArg()->clone());
         Node* f = (head->clone());
@@ -714,7 +712,7 @@ Node* diff(Node const * const head) {
 
         // Check if exponentiation is of the form C^f(x)
         if (isConstant(base)) {
-            std::unordered_set<Node*> factors;
+            std::set<Node*> factors;
             if (exponent->Type() != NodeType::Identity)
                 factors.insert(diff(exponent));
             factors.insert(head->clone());
@@ -729,7 +727,7 @@ Node* diff(Node const * const head) {
         // Check if exponentiation is of the form f(x)^C
         // This could introduce expressions of the form a/b * b * x
         if (isConstant(exponent)) {
-            std::unordered_set<Node*> factors;
+            std::set<Node*> factors;
             factors.insert(exponent->clone());
 
             // Do special stuff if the exponent is a rational number
@@ -738,7 +736,7 @@ Node* diff(Node const * const head) {
                 factors.insert(new ExpNode(base->clone(), new RationalNode(newExponent)));
             }
             else {
-                std::unordered_set<Node*> addends;
+                std::set<Node*> addends;
                 addends.insert(exponent->clone());
                 addends.insert(new NegationNode(new RationalNode(Rational(1,1))));
                 factors.insert(new ExpNode(base->clone(), new AdditionNode(addends)));
@@ -747,15 +745,15 @@ Node* diff(Node const * const head) {
         }
 
         // Otherwise we have to get ugly
-        std::unordered_set<Node*> addends;
+        std::set<Node*> addends;
         // factors1 is x^y*lnx*dy
-        std::unordered_set<Node*> factors1;
+        std::set<Node*> factors1;
         factors1.insert(head->clone());
         factors1.insert(new LogNode(base->clone()));
         if (exponent->Type() != NodeType::Identity)
             factors1.insert(diff(exponent->clone()));
         // factors2 is x^y*y/x*dx
-        std::unordered_set<Node*> factors2;
+        std::set<Node*> factors2;
         factors2.insert(head->clone());
         factors2.insert(exponent->clone());
         factors2.insert(new InversionNode(base->clone()));
@@ -791,14 +789,14 @@ Node* diff(Node const * const head) {
     }
     if (head->Type() == NodeType::ArcSin) {
         // Returns 1/(1-x^2)^0.5
-        std::unordered_set<Node*> addends;
+        std::set<Node*> addends;
         addends.insert(new RationalNode(Rational(1,1)));
         addends.insert(new NegationNode(new ExpNode(new IdentityNode(), new RationalNode(Rational(2,1)))));
         return new InversionNode(new ExpNode(new AdditionNode(addends), new RationalNode(Rational(1,2))));
     }
     if (head->Type() == NodeType::ArcTan) {
         // Returns 1/(1 + x^2)
-        std::unordered_set<Node*> addends;
+        std::set<Node*> addends;
         addends.insert(new RationalNode(Rational(1,1)));
         addends.insert(new ExpNode(new IdentityNode(), new RationalNode(Rational(2,1))));
         return new InversionNode(new AdditionNode(addends));

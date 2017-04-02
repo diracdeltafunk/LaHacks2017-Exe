@@ -7,46 +7,33 @@
 //
 
 #include <iostream>
-#include <set>
-#include "rules.hpp"
+#include <bitset>
+#include <vector>
+#include <string>
+#include "rules.h"
+#include "rand_func.h"
 
 using namespace std;
 
-int main()
-{
-//	RationalNode l(Rational(1, 2)), r(Rational(1, 1));
-	set<Node*> c, c1;
-	c.insert(new IdentityNode);
-	c.insert(new NegationNode(new IdentityNode));
-	c1.insert(new IdentityNode);
-	c1.insert(new NegationNode(new IdentityNode));
-	set <Node*> ccc;
-	ccc.insert(new SinNode(new AdditionNode(c)));
-	ccc.insert(new NegationNode(new SinNode(new AdditionNode(c1))));
-	Expression expr(new AdditionNode(ccc));
-//	Expression expr0(new AdditionNode(c));
-	
-	set<Node*> cc;
-	Expression empt(new AdditionNode(cc));
-	
-	set<Node*> cp;
-	cp.insert(new PatternMatchNode(0));
-	cp.insert(new NegationNode(new PatternMatchNode(0)));
-	Expression amina(new AdditionNode(cp));
-	
-	Rule R(amina, empt);
-	
-//	vector<pair<int, Expression>> replace_tester;
-//	replace_tester.push_back(make_pair(0, Expression(new RationalNode(Rational(1,1)))));
-	
-//	cout << replace(replace_tester, amina) << endl;
-	
-	vector <Expression> v = R.Apply(expr);
-	
-//	vector <vector <pair <int, Expression>>> v = PatternList(expr, exprp);
-	cout << v.size() << "\n";
-//	for(int i = 0; i < v.size(); i++)
-//		cout << v[i].size() << " ";
-//	cout << "\n";
+vector<NodeType> types(bitset<14> flags) {
+	vector<NodeType> result;
+	for (int i = 0; i < 14; ++i)
+		if (flags.test(i))
+			result.push_back(static_cast<NodeType>(i));
+	return result;
+}
+
+int main(int argc, char** argv) {
+	int height;
+	bitset<14> flags;
+	if (argc < 2)
+		height = 2;
+	else
+		height = stoi(argv[1]);
+	if (argc < 3)
+		flags = bitset<14>(string("11111111111111"));
+	else
+		flags = bitset<14>(string(argv[2]));
+	cout << rnd_func(types(flags), 0, height)->getString() << endl;
     return 0;
 }
