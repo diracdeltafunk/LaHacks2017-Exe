@@ -29,7 +29,7 @@ vector<vector<pair<int, Expression>>> PatternList(const Expression& formula, con
                 (dynamic_cast<AdditionNode*>(formulaClone.head)->addends).erase(elmt);
                 (dynamic_cast<AdditionNode*>(patternClone.head)->addends).erase(PatternFirst);
 
-                vector<vector<pair <int, Expression>>> V = PatternList(Expression(elmt), Expression(PatternFirst));
+                vector<vector<pair <int, Expression>>> V = PatternList(Expression(elmt->clone()), Expression(PatternFirst->clone()));
                 vector<vector<pair <int, Expression>>> U = PatternList(formulaClone,patternClone);
 
                 for(const auto& v: V){
@@ -51,7 +51,6 @@ vector<vector<pair<int, Expression>>> PatternList(const Expression& formula, con
                                 }
                         if(flag)
                             list.push_back(add);
-
                     }
                 }
             }
