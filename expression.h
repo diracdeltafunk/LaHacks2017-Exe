@@ -10,7 +10,11 @@
 #define expression_h
 
 #include <set>
+#include <iostream>
 #include <sstream>
+#include <string>
+#include <vector>
+#include "directions.h"
 #include "rational.h"
 
 enum NodeType {     //Arity:
@@ -613,8 +617,14 @@ Node* compose(Node const * const f, Node const * const g) {
 
 // Differentiation!
 inline
+Node* diff(Node const * const, DirNode& dirs);
+inline
 Node* diff(Node const * const);
 
+inline
+Expression diff(const Expression& g, DirNode& dirs) {
+    return Expression(diff(g.head, dirs));
+}
 inline
 Expression diff(const Expression& g) {
     return Expression(diff(g.head));
@@ -639,49 +649,136 @@ Expression diff(const Expression& g) {
 //       but these will not work if your expression is not simplified beforehand!
 //       For example, d/dx (x^log2)^3 = 3*(x^log2)^2*log2*(x^(log2-1))
 //               but, d/dx x^(log2*3) = 3*log2*x^(log2*3-1)
-inline
-Node* diff(Node const * const head) {
 
+// What to do with dirs:
+// By default there is a dummy instruction
+// Once we find out what the correct instruction should be, we replace it
+// We push dummy children and push dirlists initialized to point to them
+// when we have a subexpression to differentiate and we need to keep track
+// of the rules for that
+inline
+Node* diff(Node const * const head, DirNode& dirs) {
+    
+    // Enforce that dirs is of the correct type
+    if (!dirs.children.empty()) {
+        int* x = nullptr; *x;
+    }
+    if (dirs.dir->Type() != DirType::DummyDir) {
+        int* x = nullptr; *x;
+    }
+    
     // Make sure we're not differentiating a pattern
     if (head->hasPattern()) {
         int* x = nullptr; *x;
     }
-
+    
     // Derivative of constants are zero (do this first so we don't spend
     // a long time doing chain and product rules just to get a bunch of zeroes)
-
-    if (isConstant(head))
+    if (isConstant(head)) {
+        dirs.set(new SpecialDir(SpecDirType::IntegralOfZero));
         return new RationalNode(Rational(0,1));
-
+    }
+    
     // Linearity
     // Checks if an argument is constant and if so just leaves it out
     // so that we don't have too many + 0's
     if (head->Type() == NodeType::Addition) {
         std::set<Node*> addends;
         for (auto x : dynamic_cast<const AdditionNode*>(head)->addends) {
-            if (!isConstant(x))
-                addends.insert(diff(x));
+            if (!isConstant(x)) {
+                // Add how to integrate each component
+                addends.insert(diff(x,*dirs.push()));
+            }
         }
+        
+        // Set the direction to splitting the integral
+        std::vector<Node*> args;
+        for (auto x : addends) {
+            args.push_back(x->clone());
+        }
+        dirs.set(new class SplitIntegral(args));
+        
         return new AdditionNode(addends);
     }
-
+    
     // Product rule
     // Leaves out additions of zero (i.e. c * x goes to c * 1 and not 0 * x + c * 1)
     if (head->Type() == NodeType::Multiplication) {
+        
+        // The way dir works for product rule is to randomly choose an element
+        // in the resulting sum for applying integration by parts, which will
+        // get the answer and have the rest of the integrals cancel out
+        // These will be clones of the actual addends
+        std::vector<Node*> dirAddends;
+        // The function that was differentiated will be at the front
+        std::vector<std::vector<Node*>> allTerms;
+        
         std::set<Node*> addends;
         for (auto x : dynamic_cast<const ProductNode*>(head)->factors) {
             if (!isConstant(x)) {
+                
+                // NEW
+                std::vector<Node*> dirfactors;
+                
                 std::set<Node*> factors;
                 for (auto y : dynamic_cast<const ProductNode*>(head)->factors) {
-                    if (x == y) factors.insert(diff(y));
-                    else factors.insert(y->clone());
+                    if (x == y) {
+                        
+                        // NEW
+                        dirfactors.push_back(y->clone());
+                        std::swap(dirfactors[0],dirfactors[dirfactors.size() - 1]);
+                        
+                        if (y->Type() != NodeType::Identity)
+                            factors.insert(diff(y));
+                    }
+                    else {
+                        
+                        // NEW
+                        dirfactors.push_back(y->clone());
+                        
+                        factors.insert(y->clone());
+                    }
                 }
-                addends.insert(new ProductNode(factors));
+                ProductNode* nextAddend = new ProductNode(factors);
+                
+                // Here we are pushing the addend to the vector for the directions
+                dirAddends.push_back(nextAddend->clone());
+                allTerms.push_back(dirfactors);
+                
+                // And here we are pushing it for the differentiaion result
+                addends.insert(nextAddend);
             }
         }
+        
+        // ******************************************************************
+        // TODO: CHANGE THIS TO SOMETHING ELSE ONCE I REPLACE UNORDERED_SET
+        // Choose a random distinguished element and do integration by parts on it
+        
+        dirs.set(new class SplitIntegral(dirAddends));
+        std::vector<Node*> firstTermsMinus00 = allTerms[0];
+        firstTermsMinus00.erase(firstTermsMinus00.begin());
+        // *******************************************************************
+        // CHANGE THIS WHEN DONE
+        std::set<Node*> meldedStuff;
+        for (int i = 0; i < firstTermsMinus00.size(); i++) {
+            meldedStuff.insert(firstTermsMinus00[i]);
+        }
+        dirs.push(new class ByParts(new ProductNode(meldedStuff), allTerms[0][0]));
+        
+        // Add how to integrate dv
+        diff(allTerms[0][0], *(dirs.children[0]->push()));
+        
+        // Prevent memory leaks by deleting unused nodes from allTerms
+        // Make sure not to accidentally delete used nodes
+        for (int i = 1; i < allTerms.size(); i++) {
+            for (int j = 0; j < allTerms[i].size(); j++) {
+                delete allTerms[i][j];
+            }
+        }
+        
         return new AdditionNode(addends);
     }
-
+    
     // Chain rule
     // If the argument is an identity we just apply one of the rules below
     // since then chain rule isn't needed
@@ -695,21 +792,31 @@ Node* diff(Node const * const head) {
         Node* g = (dynamic_cast<const Arity1Node*>(head)->getArg()->clone());
         Node* f = (head->clone());
         dynamic_cast<Arity1Node*>(f)->setArg(new IdentityNode());
-
+        
         factors.insert(diff(g));
-        factors.insert(compose(diff(f),g));
-
-        delete g;
-        delete f;
-
+        // Used to make sure we don't have a memory leak
+        Node* df = diff(f);
+        factors.insert(compose(df,g));
+        delete df;
+        
+        // Add U-sub direction
+        // ************************************************
+        // TODO: Make U-sub work in direction of letting u be innermost function,
+        //       which should be more human-friendly
+        dirs.set(new class Usub(g, f));
+        dirs.push(new class DummyDir());
+        dirs.push(new class DummyDir());
+        delete diff(g, *dirs.children[0]);
+        delete diff(f, *dirs.children[1]);
+        
         return new ProductNode(factors);
     }
-
+    
     // Exponentiation rule - this gets a bit ugly
     if (head->Type() == NodeType::Exponentiation) {
         const Node* base = dynamic_cast<const ExpNode*>(head)->base;
         const Node* exponent = dynamic_cast<const ExpNode*>(head)->exponent;
-
+        
         // Check if exponentiation is of the form C^f(x)
         if (isConstant(base)) {
             std::set<Node*> factors;
@@ -721,15 +828,29 @@ Node* diff(Node const * const head) {
             if (base->Type() != NodeType::ConstantE) {
                 factors.insert(new LogNode(base->clone()));
             }
+            
+            // Add U-sub direction
+            // ************************************************
+            // TODO: Make U-sub work in direction of letting u be innermost function,
+            //       which should be more human-friendly
+            Node* f = head->clone();
+            delete dynamic_cast<ExpNode*>(f)->exponent;
+            dynamic_cast<ExpNode*>(f)->exponent = new IdentityNode();
+            dirs.set(new class Usub(exponent->clone(), f));
+            dirs.push(new class DummyDir());
+            dirs.push(new class DummyDir());
+            delete diff(exponent, *dirs.children[0]);
+            delete diff(f, *dirs.children[1]);
+            
             return new ProductNode(factors);
         }
-
+        
         // Check if exponentiation is of the form f(x)^C
         // This could introduce expressions of the form a/b * b * x
         if (isConstant(exponent)) {
             std::set<Node*> factors;
             factors.insert(exponent->clone());
-
+            
             // Do special stuff if the exponent is a rational number
             if (exponent->Type() == NodeType::ConstantQ) {
                 Rational newExponent = dynamic_cast<const RationalNode*>(exponent)->getNumber() - Rational(1,1);
@@ -741,9 +862,23 @@ Node* diff(Node const * const head) {
                 addends.insert(new NegationNode(new RationalNode(Rational(1,1))));
                 factors.insert(new ExpNode(base->clone(), new AdditionNode(addends)));
             }
+            
+            // Add U-sub direction
+            // ************************************************
+            // TODO: Make U-sub work in direction of letting u be innermost function,
+            //       which should be more human-friendly
+            Node* f = head->clone();
+            delete dynamic_cast<ExpNode*>(f)->base;
+            dynamic_cast<ExpNode*>(f)->base = new IdentityNode();
+            dirs.set(new class Usub(base->clone(), f));
+            dirs.push(new class DummyDir());
+            dirs.push(new class DummyDir());
+            delete diff(base, *dirs.children[0]);
+            delete diff(f, *dirs.children[1]);
+            
             return new ProductNode(factors);
         }
-
+        
         // Otherwise we have to get ugly
         std::set<Node*> addends;
         // factors1 is x^y*lnx*dy
@@ -762,33 +897,74 @@ Node* diff(Node const * const head) {
         // Now add them together
         addends.insert(new ProductNode(factors1));
         addends.insert(new ProductNode(factors2));
+        
+        // Add U-sub direction
+        // ************************************************
+        // TODO: Make the exponent rules & differentiation better
+        Node* f = new ExpNode(new ENode(), new IdentityNode);
+        Node* copyOfBase = base->clone();
+        Node* logOfBase = new LogNode(copyOfBase);
+        Node* copyOfExponent = exponent->clone();
+        Node* g = (Expression(logOfBase) * Expression(copyOfExponent)).head;
+        
+        dirs.set(new class RewriteExpToUnary(head->clone(),compose(f,g)));
+        dirs.push(new class Usub(g, f));
+        dirs.push(new class RewriteExpToBinary(head->clone(),compose(f,g)));
+        dirs.children[0]->push();
+        dirs.children[0]->push();
+        delete diff(g, *dirs.children[0]->children[0]);
+        delete diff(f, *dirs.children[0]->children[1]);
+        // Delete pointers to prevent memory leaks
+        delete copyOfBase;
+        delete logOfBase;
+        delete copyOfExponent;
+        
         return new AdditionNode(addends);
     }
-
+    
     // If we get here, then head is either of the form f(x) for some elementary function f
     // Or head is just an identity node
     // (which only happens if our whole expression was just x)
     if (head->Type() == NodeType::Negation) {
+        // Returns -1
+        
+        dirs.set(new SpecialDir(SpecDirType::IntegralOfMinusOne));
+        
         return new RationalNode(Rational(-1, 1));
     }
     if (head->Type() == NodeType::Inversion) {
         // Returns -1/x^2
+        
+        dirs.set(new SpecialDir(SpecDirType::InversionIntegral));
+        
         return new NegationNode(new InversionNode(new ExpNode(new IdentityNode(), new RationalNode(Rational(2,1)))));
     }
     if (head->Type() == NodeType::Logarithm) {
         // Returns 1/x
+        
+        dirs.set(new SpecialDir(SpecDirType::LogIntegral));
+        
         return new InversionNode(new IdentityNode);
     }
     if (head->Type() == NodeType::Sine) {
         // Returns cos(x)
+        
+        dirs.set(new SpecialDir(SpecDirType::SineIntegral));
+        
         return new CosNode(new IdentityNode());
     }
     if (head->Type() == NodeType::Cosine) {
         // Returns -x
+        
+        dirs.set(new SpecialDir(SpecDirType::CosineIntegral));
+        
         return new NegationNode(new SinNode(new IdentityNode()));
     }
     if (head->Type() == NodeType::ArcSin) {
         // Returns 1/(1-x^2)^0.5
+        
+        dirs.set(new SpecialDir(SpecDirType::ArcSinIntegral));
+        
         std::set<Node*> addends;
         addends.insert(new RationalNode(Rational(1,1)));
         addends.insert(new NegationNode(new ExpNode(new IdentityNode(), new RationalNode(Rational(2,1)))));
@@ -796,6 +972,9 @@ Node* diff(Node const * const head) {
     }
     if (head->Type() == NodeType::ArcTan) {
         // Returns 1/(1 + x^2)
+        
+        dirs.set(new SpecialDir(SpecDirType::ArcTanIntegral));
+        
         std::set<Node*> addends;
         addends.insert(new RationalNode(Rational(1,1)));
         addends.insert(new ExpNode(new IdentityNode(), new RationalNode(Rational(2,1))));
@@ -803,12 +982,20 @@ Node* diff(Node const * const head) {
     }
     if (head->Type() == NodeType::Identity) {
         // Returns 1
+        
+        dirs.set(new SpecialDir(SpecDirType::IntegralOfPlusOne));
+        
         return new RationalNode(Rational(1,1));
     }
-
+    
     // If we get here, then I missed a case and something bad happened
     Node* x = nullptr; *x;
     return x;
+}
+inline
+Node* diff(Node const * const head) {
+    DirNode dirs(nullptr, new class DummyDir());
+    return diff(head, dirs);
 }
 
 
