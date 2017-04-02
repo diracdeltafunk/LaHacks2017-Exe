@@ -53,6 +53,7 @@ public:
     unsigned arity() const { return 0; }
     bool isStrictArity0() const { return true; }
     bool hasPattern() const { return false; }
+    bool hasType(const NodeType& t) { return t == Type(); }
 };
 
 class Arity1Node : public Node {
@@ -63,7 +64,10 @@ public:
     virtual Node* setArg(Node* newArg) = 0;
     bool hasPattern() const { return getArg()->hasPattern(); }
     bool isEqual(Node const * const other) const {
-        return (other->Type() == this->Type()) && (this->getArg()->isEqual(dynamic_cast<Arity1Node const * const>(other)->getArg()));
+        return (other->Type() == this->Type()) && (getArg()->isEqual(dynamic_cast<Arity1Node const * const>(other)->getArg()));
+    }
+    bool hasType(const NodeType& t) {
+        return (t == Type()) || (t == getArg()->Type());
     }
 };
 
@@ -146,9 +150,11 @@ public:
 
     unsigned arity() const { return addends.size(); }
 
-    bool hasPattern() const {
+    bool hasType(const NodeType& t) const {
+        if (t == NodeType::Addition)
+            return true;
         for (const auto& a : addends) {
-            if (a->hasPattern())
+            if (a->hasType(t))
                 return true;
         }
         return false;
@@ -183,9 +189,11 @@ public:
 
     unsigned arity() const { return factors.size(); }
 
-    bool hasPattern() const {
+    bool hasType(const NodeType& t) const {
+        if (t == NodeType::Multiplication)
+            return true;
         for (const auto& a : factors) {
-            if (a->hasPattern())
+            if (a->hasType(t))
                 return true;
         }
         return false;
@@ -259,8 +267,8 @@ public:
 
     unsigned arity() const { return 2; }
 
-    bool hasPattern() const {
-        return base->hasPattern() || exponent->hasPattern();
+    bool hasType(const NodeType& t) const {
+        return (t == NodeType::Exponentiation) || base->hasType(t) || exponent->hasType(t);
     }
 
     bool isEqual(Node const * const other) const {
@@ -388,7 +396,9 @@ public:
 
     unsigned arity() const { return -1; }
 
-    bool hasPattern() const { return true; }
+    bool hasType(const NodeType& t) const {
+        return t == NodeType::PatternMatch;
+    }
 
     bool isEqual(Node const * const other) const {
         return (other->Type() == NodeType::PatternMatch && dynamic_cast<PatternMatchNode const * const>(other)->getIndex() == index);
