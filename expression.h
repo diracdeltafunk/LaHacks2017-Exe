@@ -552,6 +552,62 @@ public:
     Node* head;
 };
 
+// Testing for contant functions!
+// Actually this just tests whether the tree contains an identity node
+inline
+bool isConstant(const Expression& f) {
+    return !((f.head)->hasType(NodeType::Identity));
+}
+inline
+bool isConstant(Node const * const f) {
+    return !(f->hasType(NodeType::Identity));
+}
+
+
+// Composition!
+inline
+Node* compose(Node const * const, Node const * const);
+
+inline
+Expression compose(Expression f, Expression g) {
+    return Expression(compose(f.head,g.head));
+}
+
+inline
+Node* compose(Node const * const f, Node const * const g) {
+    if (isConstant(f))
+        return f->clone();
+    if (f->Type() == NodeType::Identity)
+        return g->clone();
+    if (f->isStrictArity1()) {
+        Arity1Node* newBaseFunc = dynamic_cast<Arity1Node*>(f->clone());
+        Node* newArg = compose(newBaseFunc->getArg(), g);
+        return newBaseFunc->setArg(newArg);
+    }
+    if (f->Type() == NodeType::Exponentiation) {
+        const ExpNode* f_p = dynamic_cast<const ExpNode*>(f);
+        Node* newBase = compose(f_p->base, g);
+        Node* newExponent = compose(f_p->exponent, g);
+        return new ExpNode(newBase, newExponent);
+    }
+    if (f->Type() == NodeType::Addition) {
+        std::unordered_set<Node*> addends;
+        for (auto x : dynamic_cast<const AdditionNode*>(f)->addends)
+            addends.insert(compose(x,g));
+        return new AdditionNode(addends);
+    }
+    if (f->Type() == NodeType::Multiplication) {
+        std::unordered_set<Node*> factors;
+        for (auto x : dynamic_cast<const ProductNode*>(f)->factors)
+            factors.insert(compose(x,g));
+        return new ProductNode(factors);
+    }
+    
+    // If we get here something bad happened;
+    Node* x = nullptr; *x;
+    return x;
+}
+
 // Printing!!
 inline
 std::ostream& operator<<(std::ostream& os, Expression f) {
