@@ -43,21 +43,19 @@ Expression Expression::operator+(const Expression& g) const {
 
     // Test if addition is already one of the operations in f and/or g
     if (head->Type() == NodeType::Addition) {
-        for (auto x : dynamic_cast<AdditionNode*>(head)->addends) newAddends.insert(x);
+        for (const auto& x : dynamic_cast<AdditionNode*>(head)->addends) newAddends.insert(x->clone());
     }
     else {
-        newAddends.insert(head);
+        newAddends.insert(head->clone());
     }
     if (g.head->Type() == NodeType::Addition) {
-        for (auto x : dynamic_cast<AdditionNode*>(g.head)->addends) newAddends.insert(x);
+        for (const auto& x : dynamic_cast<AdditionNode*>(g.head)->addends) newAddends.insert(x->clone());
     }
     else {
-        newAddends.insert(g.head);
+        newAddends.insert(g.head->clone());
     }
 
-    AdditionNode* newHead = new AdditionNode(newAddends);
-
-    return Expression(newHead);
+    return Expression(new AdditionNode(newAddends));
 }
 
 Expression Expression::operator-() const {
@@ -79,21 +77,19 @@ Expression Expression::operator*(const Expression& g) const {
     // Test if addition is already one of the operations in f and/or g
     if (head->Type() == NodeType::Multiplication) {
         for (const auto& x : dynamic_cast<ProductNode*>(head)->factors)
-            newFactors.insert(x);
+            newFactors.insert(x->clone());
     }
     else {
-        newFactors.insert(head);
+        newFactors.insert(head->clone());
     }
     if (g.head->Type() == NodeType::Multiplication) {
-        for (const auto& x : dynamic_cast<ProductNode*>(g.head)->factors) newFactors.insert(x);
+        for (const auto& x : dynamic_cast<ProductNode*>(g.head)->factors) newFactors.insert(x->clone());
     }
     else {
-        newFactors.insert(g.head);
+        newFactors.insert(g.head->clone());
     }
 
-    ProductNode* newHead = new ProductNode(newFactors);
-
-    return Expression(newHead);
+    return Expression(new ProductNode(newFactors));
 }
 
 bool Expression::isPattern() const {
