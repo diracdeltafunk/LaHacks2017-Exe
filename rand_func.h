@@ -11,8 +11,13 @@
 
 using namespace std;
 
-Node* rnd_func(const vector<NodeType> &v, int depth, int max_depth)
+Node* rnd_func(vector<NodeType> &v, int depth, int max_depth)
 {
+	if(find(v.begin(), v.end(), NodeType::ConstantE) != v.end())
+		v.erase(find(v.begin(), v.end(), NodeType::ConstantE));
+	if(find(v.begin(), v.end(), NodeType::ConstantPi) != v.end())
+		v.erase(find(v.begin(), v.end(), NodeType::ConstantPi));
+	
 	if(depth > max_depth)
 	{
 		if(rand() % 2)
