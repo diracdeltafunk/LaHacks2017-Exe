@@ -20,8 +20,9 @@ vector<vector<pair<int, Expression>>> PatternList(const Expression& formula, con
         auto FormulaList = dynamic_cast<AdditionNode*>(formula.head)->addends;
         auto PatternFirst = *((dynamic_cast<AdditionNode*>(pattern.head)->addends).begin());
         for(const auto& elmt: FormulaList){
-            if(elmt->arity() == PatternFirst->arity()
-               && elmt->Type() == PatternFirst->Type()){
+            if((elmt->arity() == PatternFirst->arity()
+               && elmt->Type() == PatternFirst->Type())
+               || PatternFirst->Type()== NodeType::PatternMatch){
 
                 Expression formulaClone = formula;
                 Expression patternClone = pattern;
@@ -61,8 +62,9 @@ vector<vector<pair<int, Expression>>> PatternList(const Expression& formula, con
         auto FormulaList = dynamic_cast<ProductNode*>(formula.head)->factors;
         auto PatternFirst = *((dynamic_cast<ProductNode*>(pattern.head)->factors).begin());
         for(const auto& elmt: FormulaList){
-            if(elmt->arity() == PatternFirst->arity()
-               && elmt->Type() == PatternFirst->Type()){
+            ((elmt->arity() == PatternFirst->arity()
+              && elmt->Type() == PatternFirst->Type())
+             || PatternFirst->Type()== NodeType::PatternMatch){
 
                 Expression formulaClone = formula;
                 Expression patternClone = pattern;
