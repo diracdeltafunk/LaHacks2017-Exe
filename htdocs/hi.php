@@ -49,7 +49,7 @@
             	<ul class="dropdown-menu">
 					<?php
 						$user = 'root';
-						$password = 'root';
+						$password = 'password';
 						$db = 'calc';
 						$host = 'localhost';
 						$port = 3306;
@@ -58,7 +58,7 @@
 						// Check connection
 						if ($conn->connect_error) {
 							die("Connection failed: " . $conn->connect_error);
-						} 
+						}
 
 
 						$result = mysqli_query($conn,"SELECT assign FROM users WHERE id='" . $_COOKIE["id"] . "'");
@@ -99,7 +99,7 @@
       </div>
 
     </div><!-- /.container -->
-    
+
     <div class="container">
 
 		<form>
@@ -121,9 +121,9 @@
     	<button type="button" id="button4" class="btn btn-primary">Trigonometry</button>
     	<button type="button" id="button5" class="btn btn-primary">Inverse triginometry</button>
 		<button type="button" id="button_all" class="btn btn-primary">I want it all!</button>
-		
+
     </div>
-    
+
     <div class="container">
     	<div class="row">
 			<div class="col-md-6">
@@ -150,7 +150,7 @@
       		<div id="input_side" class="col-md-6" style="display:none">
 				<h1> Input your solution:</h1>
 				<h2>
-					<form id="ans_form" onsubmit="return check_answer();">	
+					<form id="ans_form" onsubmit="return check_answer();">
 						<div class="form-group">
 							<input class="form-control" type="text" value="" id="answer">
 						</div>
@@ -161,7 +161,7 @@
   					<strong>Well done!</strong> You are an integral master.
 				</div>
 				<div id="bad_ans" class="alert alert-danger" role="alert" style="display:none">
-  					<strong>Wrong</strong> Better luck next time. 
+  					<strong>Wrong</strong> Better luck next time.
 				</div>
 				<div id="solution" style="display:none">
   					<button type="button" class="btn btn-primary">Show the step-by-step solution</button>
@@ -169,8 +169,8 @@
       		</div>
 		</div>
     </div>
-    
-    
+
+
 
     <!-- Bootstrap core JavaScript
     ================================================== -->
@@ -183,4 +183,3 @@
     <script src="//cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js">
   </body>
 </html>
-

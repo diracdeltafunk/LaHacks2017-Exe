@@ -13,6 +13,7 @@
 #include "rules.h"
 #include "expression.h"
 #include "rand_func.h"
+#include "simplify.h"
 
 using namespace std;
 
@@ -45,19 +46,18 @@ vector<NodeType> types(string f) {
 
 int main(int argc, char** argv) {
 	int height;
-	string flags;
+	vector<NodeType> flags;
 	if (argc < 2)
 		height = 2;
 	else
 		height = stoi(argv[1]);
 	if (argc < 3)
-		flags = string("11111111111111");
+		flags = types(string("11111111111111"));
 	else
-		flags = string(argv[2]);
+		flags = types(string(argv[2]));
 
-	cout << flags << endl;
-
-	Expression e(rnd_func(types(flags), 0, height));
-	cout << diff(e) << endl;
+	Expression e(rnd_func(flags, 0, height));
+	Expression de = diff(e);
+	cout << e << endl << de << endl;
     return 0;
 }

@@ -67,7 +67,7 @@
 				<ul style="padding-top:20px" class="list-group">
 					<?php
 						$user = 'root';
-							$password = 'root';
+							$password = 'password';
 							$db = 'calc';
 							$host = 'localhost';
 							$port = 3306;
@@ -76,19 +76,19 @@
 							// Check connection
 							if ($conn->connect_error) {
 								die("Connection failed: " . $conn->connect_error);
-							} 
+							}
 
 
 							$result = mysqli_query($conn,"SELECT sgroup FROM users WHERE id='" . $_COOKIE["id"] . "'");
 							$group = $result->fetch_object()->sgroup;
 							$entries = explode("|", $group);
-					
+
 							foreach($entries as $prb)
 							{
 								if($prb != "")
 								{
 									$res = mysqli_query($conn,"SELECT * FROM users WHERE id='" . $prb . "'");
-									$obj = $res->fetch_object(); 
+									$obj = $res->fetch_object();
 									$first_name = $obj->first_name;
 									$last_name = $obj->last_name;
 									echo "<li style=\"font-size:20px\"> $first_name" . " $last_name </li>";
@@ -136,7 +136,7 @@
 					  </div>
 					</div>
 					<button id="add" type="submit" class="btn btn-success">Submit</button>
-				
+
 				</form>
 				<?php
 					if(isset($_GET["success"]))
@@ -146,7 +146,7 @@
 								<div style="padding-top:30px; padding-right:30px;">
 									<div style="width:300px" class="alert alert-success" role="alert">
 										Assignment added successfully!
-									</div> 
+									</div>
 								</div>	';
 
 					}
@@ -178,7 +178,7 @@
 						  </div>
 						</div>
 						<button id="add" type="submit" class="btn btn-success">Submit</button>
-					
+
 					</form>
 				</div>
 				<?php
@@ -189,19 +189,19 @@
 								<div style="padding-top:30px" class="container">
 									<div style="width:400px" class="alert alert-success" role="alert">
 										Student added successfully!
-									</div> 
+									</div>
 								</div>	';
 						if($_GET["success"] == 0)
 							echo '
 								<div style="padding-top:30px" class="container">
 									<div style="width:400px" class="alert alert-danger" role="alert">
 										Student not found :(
-									</div> 
+									</div>
 								</div>	';
 
 					}
 				?>
-			</div>	
+			</div>
 		</div>
 		<div class="row" style="padding-top:50px">
 			<table style="padding-top:20px; width:auto; font-size:20px;" class="table table-bordered">
@@ -216,19 +216,19 @@
 					// Check connection
 					if ($conn->connect_error) {
 						die("Connection failed: " . $conn->connect_error);
-					} 
+					}
 
 
 					$result = mysqli_query($conn,"SELECT sgroup FROM users WHERE id='" . $_COOKIE["id"] . "'");
 					$group = $result->fetch_object()->sgroup;
 					$entries = explode("|", $group);
-			
+
 					$mx = 0;
 					if(sizeof($entries) > 0) {
 						$res = mysqli_query($conn, "SELECT * FROM users WHERE id='" . $entries[0] . "'");
 						$mx = substr_count($res->fetch_object()->score, '|');
 					}
-			
+
 					echo "<thead>";
 						echo "<th> Name </th>";
 						for($i = 1; $i <= $mx; $i += 1)
@@ -266,7 +266,7 @@
 		</div>
     </div>
 
-    
+
 
     <!-- Bootstrap core JavaScript
     ================================================== -->
@@ -279,4 +279,3 @@
     <script src="//cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js">
   </body>
 </html>
-

@@ -9,6 +9,7 @@
 #ifndef rand_func_h
 #define rand_func_h
 
+#include <time.h>
 #include <iostream>
 #include <algorithm>
 
@@ -16,8 +17,9 @@
 
 using namespace std;
 
-Node* rnd_func(vector<NodeType> v, int depth, int max_depth)
+Node* rnd_func(vector<NodeType>& v, int depth, int max_depth)
 {
+	srand(time(NULL));
 	if(find(v.begin(), v.end(), NodeType::ConstantE) != v.end())
 		v.erase(find(v.begin(), v.end(), NodeType::ConstantE));
 	if(find(v.begin(), v.end(), NodeType::ConstantPi) != v.end())
