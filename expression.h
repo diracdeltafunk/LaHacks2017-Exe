@@ -529,7 +529,7 @@ public:
 
     Expression& operator=(Expression other);
 
-    //Expression(Expression&& other);
+    Expression(Expression&& other);
 
     ~Expression();
 
@@ -551,6 +551,264 @@ public:
 
     Node* head;
 };
+
+// Testing for contant functions!
+// Actually this just tests whether the tree contains an identity node
+inline
+bool isConstant(const Expression& f) {
+    return !((f.head)->hasType(NodeType::Identity));
+}
+inline
+bool isConstant(Node const * const f) {
+    return !(f->hasType(NodeType::Identity));
+}
+
+
+// Composition!
+inline
+Node* compose(Node const * const, Node const * const);
+
+inline
+Expression compose(Expression f, Expression g) {
+    return Expression(compose(f.head,g.head));
+}
+
+inline
+Node* compose(Node const * const f, Node const * const g) {
+    if (isConstant(f))
+        return f->clone();
+    if (f->Type() == NodeType::Identity)
+        return g->clone();
+    if (f->isStrictArity1()) {
+        Arity1Node* newBaseFunc = dynamic_cast<Arity1Node*>(f->clone());
+        Node* newArg = compose(newBaseFunc->getArg(), g);
+        return newBaseFunc->setArg(newArg);
+    }
+    if (f->Type() == NodeType::Exponentiation) {
+        const ExpNode* f_p = dynamic_cast<const ExpNode*>(f);
+        Node* newBase = compose(f_p->base, g);
+        Node* newExponent = compose(f_p->exponent, g);
+        return new ExpNode(newBase, newExponent);
+    }
+    if (f->Type() == NodeType::Addition) {
+        std::unordered_set<Node*> addends;
+        for (auto x : dynamic_cast<const AdditionNode*>(f)->addends)
+            addends.insert(compose(x,g));
+        return new AdditionNode(addends);
+    }
+    if (f->Type() == NodeType::Multiplication) {
+        std::unordered_set<Node*> factors;
+        for (auto x : dynamic_cast<const ProductNode*>(f)->factors)
+            factors.insert(compose(x,g));
+        return new ProductNode(factors);
+    }
+
+    // If we get here something bad happened;
+    Node* x = nullptr; *x;
+    return x;
+}
+
+// Differentiation!
+inline
+Node* diff(Node const * const);
+
+inline
+Expression diff(const Expression& g) {
+    return Expression(diff(g.head));
+}
+
+// Currently may introduce addition of zeroes from constants
+// I could try fixing this up better with more logic later
+// Also, it could have nested multiplications, which breaks associativity
+// I could try fixing this too
+// Also, I will implement keeping track of what instructions are done
+// to differentiate so that we can do the backwards integration solution
+
+// TODO: Make sure that this doesn't return any pointers involving original tree
+//       Also check for memory leaks
+//       Undo associativity breaking
+//       Implement utility functions
+
+// NOTE: This will most likely rapidly increase the complexity of expressions
+//       **IF** you do not simplify expressions before passing them in.
+//       I implemented some measures against ballooning simplified expressions
+//       (i.e.- d/dx (e^x) = e^x and not d/dx (e^x) = log(e) * e^x),
+//       but these will not work if your expression is not simplified beforehand!
+//       For example, d/dx (x^log2)^3 = 3*(x^log2)^2*log2*(x^(log2-1))
+//               but, d/dx x^(log2*3) = 3*log2*x^(log2*3-1)
+inline
+Node* diff(Node const * const head) {
+
+    // Make sure we're not differentiating a pattern
+    if (head->hasPattern()) {
+        int* x = nullptr; *x;
+    }
+
+    // Derivative of constants are zero (do this first so we don't spend
+    // a long time doing chain and product rules just to get a bunch of zeroes)
+
+    if (isConstant(head))
+        return new RationalNode(Rational(0,1));
+
+    // Linearity
+    // Checks if an argument is constant and if so just leaves it out
+    // so that we don't have too many + 0's
+    if (head->Type() == NodeType::Addition) {
+        std::unordered_set<Node*> addends;
+        for (auto x : dynamic_cast<const AdditionNode*>(head)->addends) {
+            if (!isConstant(x))
+                addends.insert(diff(x));
+        }
+        return new AdditionNode(addends);
+    }
+
+    // Product rule
+    // Leaves out additions of zero (i.e. c * x goes to c * 1 and not 0 * x + c * 1)
+    if (head->Type() == NodeType::Multiplication) {
+        std::unordered_set<Node*> addends;
+        for (auto x : dynamic_cast<const ProductNode*>(head)->factors) {
+            if (!isConstant(x)) {
+                std::unordered_set<Node*> factors;
+                for (auto y : dynamic_cast<const ProductNode*>(head)->factors) {
+                    if (x == y) factors.insert(diff(y));
+                    else factors.insert(y->clone());
+                }
+                addends.insert(new ProductNode(factors));
+            }
+        }
+        return new AdditionNode(addends);
+    }
+
+    // Chain rule
+    // If the argument is an identity we just apply one of the rules below
+    // since then chain rule isn't needed
+    // Right now it automatically chooses the outermost function to start with
+    // (Just by the way diff is implemented recursively)
+    // However, if we create integration problems we might want to have the
+    // algorithm do things in different ways or at least store them as different u-subs and such.
+    if (head->isStrictArity1() && dynamic_cast<const Arity1Node*>(head)->getArg()->Type() != NodeType::Identity) {
+        std::unordered_set<Node*> factors;
+        // Do chain rule on f(g(x))
+        Node* g = (dynamic_cast<const Arity1Node*>(head)->getArg()->clone());
+        Node* f = (head->clone());
+        dynamic_cast<Arity1Node*>(f)->setArg(new IdentityNode());
+
+        factors.insert(diff(g));
+        factors.insert(compose(diff(f),g));
+
+        delete g;
+        delete f;
+
+        return new ProductNode(factors);
+    }
+
+    // Exponentiation rule - this gets a bit ugly
+    if (head->Type() == NodeType::Exponentiation) {
+        const Node* base = dynamic_cast<const ExpNode*>(head)->base;
+        const Node* exponent = dynamic_cast<const ExpNode*>(head)->exponent;
+
+        // Check if exponentiation is of the form C^f(x)
+        if (isConstant(base)) {
+            std::unordered_set<Node*> factors;
+            if (exponent->Type() != NodeType::Identity)
+                factors.insert(diff(exponent));
+            factors.insert(head->clone());
+            // Only multiply by log of base if base is not e
+            // This doesn't catch stupid expressions, like, (e^3)^x
+            if (base->Type() != NodeType::ConstantE) {
+                factors.insert(new LogNode(base->clone()));
+            }
+            return new ProductNode(factors);
+        }
+
+        // Check if exponentiation is of the form f(x)^C
+        // This could introduce expressions of the form a/b * b * x
+        if (isConstant(exponent)) {
+            std::unordered_set<Node*> factors;
+            factors.insert(exponent->clone());
+
+            // Do special stuff if the exponent is a rational number
+            if (exponent->Type() == NodeType::ConstantQ) {
+                Rational newExponent = dynamic_cast<const RationalNode*>(exponent)->getNumber() - Rational(1,1);
+                factors.insert(new ExpNode(base->clone(), new RationalNode(newExponent)));
+            }
+            else {
+                std::unordered_set<Node*> addends;
+                addends.insert(exponent->clone());
+                addends.insert(new NegationNode(new RationalNode(Rational(1,1))));
+                factors.insert(new ExpNode(base->clone(), new AdditionNode(addends)));
+            }
+            return new ProductNode(factors);
+        }
+
+        // Otherwise we have to get ugly
+        std::unordered_set<Node*> addends;
+        // factors1 is x^y*lnx*dy
+        std::unordered_set<Node*> factors1;
+        factors1.insert(head->clone());
+        factors1.insert(new LogNode(base->clone()));
+        if (exponent->Type() != NodeType::Identity)
+            factors1.insert(diff(exponent->clone()));
+        // factors2 is x^y*y/x*dx
+        std::unordered_set<Node*> factors2;
+        factors2.insert(head->clone());
+        factors2.insert(exponent->clone());
+        factors2.insert(new InversionNode(base->clone()));
+        if (base->Type() != NodeType::Identity)
+            factors2.insert(diff(base));
+        // Now add them together
+        addends.insert(new ProductNode(factors1));
+        addends.insert(new ProductNode(factors2));
+        return new AdditionNode(addends);
+    }
+
+    // If we get here, then head is either of the form f(x) for some elementary function f
+    // Or head is just an identity node
+    // (which only happens if our whole expression was just x)
+    if (head->Type() == NodeType::Negation) {
+        return new RationalNode(Rational(-1, 1));
+    }
+    if (head->Type() == NodeType::Inversion) {
+        // Returns -1/x^2
+        return new NegationNode(new InversionNode(new ExpNode(new IdentityNode(), new RationalNode(Rational(2,1)))));
+    }
+    if (head->Type() == NodeType::Logarithm) {
+        // Returns 1/x
+        return new InversionNode(new IdentityNode);
+    }
+    if (head->Type() == NodeType::Sine) {
+        // Returns cos(x)
+        return new CosNode(new IdentityNode());
+    }
+    if (head->Type() == NodeType::Cosine) {
+        // Returns -x
+        return new NegationNode(new SinNode(new IdentityNode()));
+    }
+    if (head->Type() == NodeType::ArcSin) {
+        // Returns 1/(1-x^2)^0.5
+        std::unordered_set<Node*> addends;
+        addends.insert(new RationalNode(Rational(1,1)));
+        addends.insert(new NegationNode(new ExpNode(new IdentityNode(), new RationalNode(Rational(2,1)))));
+        return new InversionNode(new ExpNode(new AdditionNode(addends), new RationalNode(Rational(1,2))));
+    }
+    if (head->Type() == NodeType::ArcTan) {
+        // Returns 1/(1 + x^2)
+        std::unordered_set<Node*> addends;
+        addends.insert(new RationalNode(Rational(1,1)));
+        addends.insert(new ExpNode(new IdentityNode(), new RationalNode(Rational(2,1))));
+        return new InversionNode(new AdditionNode(addends));
+    }
+    if (head->Type() == NodeType::Identity) {
+        // Returns 1
+        return new RationalNode(Rational(1,1));
+    }
+
+    // If we get here, then I missed a case and something bad happened
+    Node* x = nullptr; *x;
+    return x;
+}
+
+
 
 // Printing!!
 inline
