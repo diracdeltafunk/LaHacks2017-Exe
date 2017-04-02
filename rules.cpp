@@ -1,148 +1,178 @@
 #include "rules.h"
 
 using namespace std;
-
 vector<vector<pair<int, Expression>>> PatternList(const Expression& formula, const Expression& pattern) {
-    vector<vector<pair<int, Expression>>> list;
+	vector<vector<pair<int, Expression>>> list;
+	
+	if (formula.head->Type() != pattern.head->Type()
+		|| pattern.head->arity() != formula.head->arity()){
+		if(pattern.head->Type() == NodeType::PatternMatch){
+			vector<pair <int, Expression>> singleton;
+			singleton.push_back(make_pair(dynamic_cast<PatternMatchNode*>(pattern.head)->getIndex(),formula));
+			list.push_back(singleton);
+		}else{
+			return list;
+		}
+	}
+	
+	else if (formula.head->arity() == 0){
+		if(*(formula.head) == *(pattern.head)){
+			vector<pair<int, Expression>> xxx;
+			list.push_back(xxx);
+		}
+	}
+	
+	else if (formula.head->Type() == NodeType::Addition) {
+		auto FormulaList = dynamic_cast<AdditionNode*>(formula.head)->addends;
+		auto Pattern_List = dynamic_cast<AdditionNode*>(pattern.head)->addends;
+		auto PatternFirst = *((dynamic_cast<AdditionNode*>(pattern.head)->addends).begin());
+		int pos = 0;
+		for(set<Node*>::iterator it = FormulaList.begin(); it != FormulaList.end(); ++it){
+			Node* elmt = *it;
+			if((elmt->arity() == PatternFirst->arity()
+				&& elmt->Type() == PatternFirst->Type())
+			   || PatternFirst->Type()== NodeType::PatternMatch){
+				
+				
+				Expression formulaClone = formula;
+				Expression patternClone = pattern;
+				
+				int p = 0;
+				for(set<Node*>::iterator jt = (dynamic_cast<AdditionNode*>(formulaClone.head)->addends).begin(); jt != (dynamic_cast<AdditionNode*>(formulaClone.head)->addends).end();)
+					if(p++ == pos)
+						jt = (dynamic_cast<AdditionNode*>(formulaClone.head)->addends).erase(jt);
+					else
+						++jt;
+				
+				(dynamic_cast<AdditionNode*>(patternClone.head)->addends).erase((dynamic_cast<AdditionNode*>(patternClone.head)->addends).begin());
+				
+				Expression expr1(elmt->clone());
+				Expression expr2(PatternFirst->clone());
 
-    if (formula.head->Type() != pattern.head->Type()
-       || pattern.head->arity() != formula.head->arity()){
-        if(pattern.head->Type() == NodeType::PatternMatch){
-            vector<pair <int, Expression>> singleton;
-            singleton.push_back(make_pair(dynamic_cast<PatternMatchNode*>(pattern.head)->getIndex(),formula));
-            list.push_back(singleton);
-        }else{
-            return list;
-        }
-    }
-    
-    else if (formula.head->arity() == 0){
-        if(*(formula.head) == *(pattern.head)){
-            vector<pair<int, Expression>> xxx;
-            list.push_back(xxx);
-        }
-    }
+				
+				vector<vector<pair <int, Expression>>> V = PatternList(expr1, expr2);
+				vector<vector<pair <int, Expression>>> U = PatternList(formulaClone, patternClone);
+				
+				for(const auto& v: V){
+					for(const auto& u: U){
+						vector <int> was(100, 0);
+						vector<pair <int, Expression>> add;
+						bool flag = true;
+						for(const auto& x : v)
+							for(const auto& y : u)
+								if(x.first == y.first)
+									if(x.second != y.second)
+										flag = false;
+									
+						for(const auto& x : v)
+							if(!was[x.first])
+							{
+								was[x.first] = 1;
+								add.push_back(x);
+							}
+						for(const auto& y : u)
+							if(!was[y.first])
+							{
+								was[y.first] = 1;
+								add.push_back(y);
+							}
+						
 
-    else if (formula.head->Type() == NodeType::Addition) {
-        auto FormulaList = dynamic_cast<AdditionNode*>(formula.head)->addends;
-        auto PatternFirst = *((dynamic_cast<AdditionNode*>(pattern.head)->addends).begin());
-        for(const auto& elmt: FormulaList){
-            if((elmt->arity() == PatternFirst->arity()
-               && elmt->Type() == PatternFirst->Type())
-               || PatternFirst->Type()== NodeType::PatternMatch){
-
-                Expression formulaClone = formula;
-                Expression patternClone = pattern;
-
-                (dynamic_cast<AdditionNode*>(formulaClone.head)->addends).erase(elmt);
-                (dynamic_cast<AdditionNode*>(patternClone.head)->addends).erase(PatternFirst);
-
-                vector<vector<pair <int, Expression>>> V = PatternList(Expression(elmt->clone()), Expression(PatternFirst->clone()));
-                vector<vector<pair <int, Expression>>> U = PatternList(formulaClone, patternClone);
-
-                for(const auto& v: V){
-                    for(const auto& u: U){
-                        vector <int> was(100, 0);
-                        vector<pair <int, Expression>> add;
-                        bool flag = true;
-                        for(const auto& x : v)
-                            for(const auto& y : u)
-                                if(x.first == y.first)
-                                {
-                                    if(x.second != y.second)
-                                        flag = false;
-                                    else if(!was[x.first])
-                                    {
-                                        was[x.first] = 1;
-                                        add.push_back(x);
-                                    }
-                                }
-                        if(flag)
-                            list.push_back(add);
-                    }
-                }
-            }
-        }
-    }
-
-    else if (formula.head->Type() == NodeType::Multiplication) {
-        auto FormulaList = dynamic_cast<ProductNode*>(formula.head)->factors;
-        auto PatternFirst = *((dynamic_cast<ProductNode*>(pattern.head)->factors).begin());
-        for(const auto& elmt : FormulaList){
-            if((elmt->arity() == PatternFirst->arity()
-              && elmt->Type() == PatternFirst->Type())
-             || PatternFirst->Type()== NodeType::PatternMatch){
-
-                Expression formulaClone = formula;
-                Expression patternClone = pattern;
-
-                (dynamic_cast<ProductNode*>(formulaClone.head)->factors).erase(elmt);
-                (dynamic_cast<ProductNode*>(patternClone.head)->factors).erase(PatternFirst);
-
-                vector<vector<pair <int, Expression>>> V = PatternList(Expression(elmt->clone()), Expression(PatternFirst->clone()));
-                vector<vector<pair <int, Expression>>> U = PatternList(formulaClone,patternClone);
-
-                for(const auto& v: V){
-                    for(const auto& u: U){
-                        vector <int> was(100, 0);
-                        vector<pair <int, Expression>> add;
-                        bool flag = true;
-                        for(const auto& x : v)
-                            for(const auto& y : u)
-                                if(x.first == y.first)
-                                {
-                                    if(x.second != y.second)
-                                        flag = false;
-                                    else if(!was[x.first])
-                                    {
-                                        was[x.first] = 1;
-                                        add.push_back(x);
-                                    }
-                                }
-                        if(flag)
-                            list.push_back(add);
-
-                    }
-                }
-            }
-        }
-    }
-
-    else if (formula.head->Type() == NodeType::Exponentiation){
-
-        vector<vector<pair <int, Expression>>> V = PatternList(Expression(dynamic_cast<ExpNode*>(formula.head)->base->clone()), Expression(dynamic_cast<ExpNode*>(pattern.head)->base->clone()));
-        vector<vector<pair <int, Expression>>> U = PatternList(Expression(dynamic_cast<ExpNode*>(formula.head)->exponent->clone()), Expression(dynamic_cast<ExpNode*>(pattern.head)->exponent->clone()));
-
-        for(const auto& v: V){
-            for(const auto& u: U){
-                vector <int> was(100, 0);
-                vector<pair <int, Expression>> add;
-                bool flag = true;
-                for(const auto& x : v)
-                    for(const auto& y : u)
-                        if(x.first == y.first)
-                        {
-                            if(x.second != y.second)
-                                flag = false;
-                            else if(!was[x.first])
-                            {
-                                was[x.first] = 1;
-                                add.push_back(x);
-                            }
-                        }
-                if(flag)
-                    list.push_back(add);
-            }
-        }
-
-    }
-
-    else if (formula.head->isStrictArity1()){
-        list = PatternList(Expression(dynamic_cast<Arity1Node*>(formula.head)->getArg()->clone()), Expression(dynamic_cast<Arity1Node*>(pattern.head)->getArg()->clone()));
-    }
-
-    return list;
+						if(flag)
+							list.push_back(add);
+					}
+				}
+			}
+			pos++;
+		}
+	}
+	
+	else if (formula.head->Type() == NodeType::Multiplication) {
+		auto FormulaList = dynamic_cast<ProductNode*>(formula.head)->factors;
+		auto PatternFirst = *((dynamic_cast<ProductNode*>(pattern.head)->factors).begin());
+		for(const auto& elmt : FormulaList){
+			if((elmt->arity() == PatternFirst->arity()
+			  && elmt->Type() == PatternFirst->Type())
+			 || PatternFirst->Type()== NodeType::PatternMatch){
+				
+				Expression formulaClone = formula;
+				Expression patternClone = pattern;
+				
+				(dynamic_cast<ProductNode*>(formulaClone.head)->factors).erase(elmt);
+				(dynamic_cast<ProductNode*>(patternClone.head)->factors).erase(PatternFirst);
+				
+				vector<vector<pair <int, Expression>>> V = PatternList(Expression(elmt->clone()), Expression(PatternFirst->clone()));
+				vector<vector<pair <int, Expression>>> U = PatternList(formulaClone,patternClone);
+				
+				for(const auto& v: V){
+					for(const auto& u: U){
+						vector <int> was(100, 0);
+						vector<pair <int, Expression>> add;
+						bool flag = true;
+						for(const auto& x : v)
+							for(const auto& y : u)
+								if(x.first == y.first)
+									if(x.second != y.second)
+										flag = false;
+						
+						for(const auto& x : v)
+							if(!was[x.first])
+							{
+								was[x.first] = 1;
+								add.push_back(x);
+							}
+						for(const auto& y : u)
+							if(!was[y.first])
+							{
+								was[y.first] = 1;
+								add.push_back(y);
+							}
+						
+						if(flag)
+							list.push_back(add);
+						
+					}
+				}
+			}
+		}
+	}
+	
+	else if (formula.head->Type() == NodeType::Exponentiation){
+		
+		vector<vector<pair <int, Expression>>> V = PatternList(Expression(dynamic_cast<ExpNode*>(formula.head)->base->clone()), Expression(dynamic_cast<ExpNode*>(pattern.head)->base->clone()));
+		vector<vector<pair <int, Expression>>> U = PatternList(Expression(dynamic_cast<ExpNode*>(formula.head)->exponent->clone()), Expression(dynamic_cast<ExpNode*>(pattern.head)->exponent->clone()));
+		
+		for(const auto& v: V){
+			for(const auto& u: U){
+				vector <int> was(100, 0);
+				vector<pair <int, Expression>> add;
+				bool flag = true;
+				for(const auto& x : v)
+					for(const auto& y : u)
+						if(x.first == y.first)
+						{
+							if(x.second != y.second)
+								flag = false;
+							else if(!was[x.first])
+							{
+								was[x.first] = 1;
+								add.push_back(x);
+							}
+						}
+				if(flag)
+					list.push_back(add);
+			}
+		}
+		
+	}
+	
+	else if (formula.head->isStrictArity1()){
+		list = PatternList(Expression(dynamic_cast<Arity1Node*>(formula.head)->getArg()->clone()), Expression(dynamic_cast<Arity1Node*>(pattern.head)->getArg()->clone()));
+	}
+	
+	return list;
 }
+
 
 Expression replace(vector<pair<int, Expression>> replacements, Expression Base){
     if(Base.head->Type() == NodeType::PatternMatch){
