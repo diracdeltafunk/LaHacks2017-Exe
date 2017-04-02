@@ -154,6 +154,37 @@ vector<Rule*> generateSimps() {
         }
         Rule* R14 = new Rule(natexp,reppr);
         SimpList.push_back(R14);
+        
+        
+        set<Node*> vars;
+        for(int i = 0; i < k; i++){
+            vars.insert(new PatternMatchNode(i));
+        }
+        set<Node*> zer;
+        for(int i = 0; i < k; i++){
+            zer.insert(new PatternMatchNode(i));
+        }
+        zer.insert(new RationalNode(Rational 0,1));
+        set<Node*> uni;
+        for(int i = 0; i < k; i++){
+            uni.insert(new PatternMatchNode(i));
+        }
+        uni.insert(new RationalNode(Rational 0,1));
+        Expression prdct(new ProductNode(vars));
+        Expression sumex(new AdditionNode(vars));
+        Expression prduni(new ProductNode(uni));
+        Expression sumzer(new AdditionNode(zer));
+        
+        Rule* T5 = new Rule(prdct, prduni);
+        SimpList.push_back(T5);
+        Rule* T6 = new Rule(prduni, prdct);
+        SimpList.push_back(T6);
+        Rule* T7 = new Rule(sumex, sumzer);
+        SimpList.push_back(T7);
+        Rule* T8 = new Rule(sumzer, sumex);
+        SimpList.push_back(T8);
+        
+        
     }
 
     set<Node*> empty;
@@ -260,7 +291,15 @@ vector<Rule*> generateSimps() {
     SimpList.push_back(L7);
     Rule* L8 = new Rule(negl,lrec);
     SimpList.push_back(L8);
-
+    
+    set<Node*> sinsum;
+    sinsum.insert(new ExpNode(new SinNode(PatternMatchNode(0)),new RationalNode(Rational(2,1))));
+    sinsum.insert(new ExpNode(new CosNode(PatternMatchNode(0)),new RationalNode(Rational(2,1))));
+    Expression s2c2(new AdditionNode(sinsum));
+    Rule* S1 = new Rule(s2c2, onerat);
+    SimpList.push_back(S1);
+    
+    
     return SimpList;
 }
 
