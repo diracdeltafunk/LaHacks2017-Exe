@@ -7,6 +7,8 @@ class Rational {
 public:
     Rational(int64_t, int64_t);
     double toDouble() const;
+    int64_t getNumerator() const    { return numerator; }
+    int64_t getDenominator() const  { return denominator; }
     // Arithmetic
     Rational operator+(const Rational&) const;
     Rational operator-(const Rational&) const;
