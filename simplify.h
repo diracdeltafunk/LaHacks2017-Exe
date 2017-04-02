@@ -3,6 +3,7 @@
 #include <set>
 #include "rules.h"
 #include "rational.h"
+#include "expression.h"
 
 using namespace std;
 
@@ -301,6 +302,44 @@ vector<Rule*> generateSimps() {
     
     
     return SimpList;
+}
+
+int measure(Node* formula){
+    if(formula->Type() == NodeType::Addition ){
+        int sum = 1;
+        for(const auto& term : dynamic_cast<AdditionNode*>(formula)->addends ){
+            sum += measure(term);
+        }
+        return sum;
+    }
+    if(formula->Type() == NodeType::Multiplication ){
+        int sum = 1;
+        for(const auto& term : dynamic_cast<AdditionNode*>(formula)->factors ){
+            sum += measure(term);
+        }
+        return sum;
+    }
+    if(formula->Type() == NodeType::Exponentiation){
+        return 1 + measure(dynamic_cast<ExpNode*>(formula)->base) + measure(dynamic_cast<ExpNode*>(formula)->exponent);
+    }
+    if(formula->isStrictArity1()){
+        return 1 + measure(dynamic_case<Arity1Node*>(formula)->getArg());
+    }
+    return 1;
+}
+
+Expression Simplify(vector<Rule*> ruleList, Expression formula){
+    Expression best;
+    int record= 1000;
+    for(const auto& rule : ruleList){
+        for(const auto& term: rule->Apply(formula)){
+            if (measure(term.head)< record){
+                best = term;
+                record = measure(term);
+            }
+        }
+    }
+    return best;
 }
 
 #endif
