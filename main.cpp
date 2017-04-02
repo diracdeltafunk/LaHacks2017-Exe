@@ -11,29 +11,53 @@
 #include <vector>
 #include <string>
 #include "rules.h"
+#include "expression.h"
 #include "rand_func.h"
 
 using namespace std;
 
-vector<NodeType> types(bitset<14> flags) {
+vector<NodeType> allTypes = {
+	NodeType::ConstantQ,      //0
+    NodeType::ConstantPi,     //0
+    NodeType::ConstantE,      //0
+    NodeType::Identity,       //0
+    NodeType::Addition,       //n
+    NodeType::Multiplication, //n
+    NodeType::Negation,       //1
+    NodeType::Inversion,      //1
+    NodeType::Exponentiation, //2
+    NodeType::Logarithm,      //1
+    NodeType::Sine,           //1
+    NodeType::Cosine,         //1
+    NodeType::ArcSin,         //1
+    NodeType::ArcTan,         //1
+};
+
+vector<NodeType> types(string f) {
 	vector<NodeType> result;
-	for (int i = 0; i < 14; ++i)
-		if (flags.test(i))
-			result.push_back(static_cast<NodeType>(i));
+	for (int i = 0; i < f.size() && i < 14; ++i) {
+		if (f[i] == '1') {
+			result.push_back(allTypes[i]);
+		}
+	}
 	return result;
 }
 
 int main(int argc, char** argv) {
 	int height;
-	bitset<14> flags;
+	string flags;
 	if (argc < 2)
 		height = 2;
 	else
 		height = stoi(argv[1]);
 	if (argc < 3)
-		flags = bitset<14>(string("11111111111111"));
+		flags = string("11111111111111");
 	else
-		flags = bitset<14>(string(argv[2]));
-	cout << rnd_func(types(flags), 0, height)->getString() << endl;
+		flags = string(argv[2]);
+
+	cout << flags << endl;
+
+	Expression e(rnd_func(types(flags), 0, height));
+	cout << diff(e) << endl;
     return 0;
 }
