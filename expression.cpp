@@ -92,6 +92,14 @@ Expression Expression::operator*(const Expression& g) const {
     return Expression(new ProductNode(newFactors));
 }
 
+bool Expression::operator==(const Expression& other) const {
+    return head->isEqual(other.head);
+}
+
+bool Expression::operator!=(const Expression& other) const {
+    return !(*this == other);
+}
+
 bool Expression::isPattern() const {
     return head->hasPattern();
 }

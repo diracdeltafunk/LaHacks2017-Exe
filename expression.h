@@ -430,7 +430,11 @@ public:
 
     Expression operator-(const Expression&) const;
 
-    Expression operator*(const Expression& g) const;
+    Expression operator*(const Expression&) const;
+
+    bool operator==(const Expression&) const;
+
+    bool operator!=(const Expression&) const;
 
     bool isPattern() const;
 
