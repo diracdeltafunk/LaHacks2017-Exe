@@ -1,2 +1,2 @@
-# LaHacks2017-Exe
+# Entraîner
 Generates difficult integrals!
