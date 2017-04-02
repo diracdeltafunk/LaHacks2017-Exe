@@ -152,19 +152,28 @@ vector<vector<pair<int, Expression>>> PatternList(const Expression& formula, con
 				for(const auto& x : v)
 					for(const auto& y : u)
 						if(x.first == y.first)
-						{
 							if(x.second != y.second)
 								flag = false;
-							else if(!was[x.first])
-							{
-								was[x.first] = 1;
-								add.push_back(x);
-							}
-						}
+				
+				for(const auto& x : v)
+					if(!was[x.first])
+					{
+						was[x.first] = 1;
+						add.push_back(x);
+					}
+				for(const auto& y : u)
+					if(!was[y.first])
+					{
+						was[y.first] = 1;
+						add.push_back(y);
+					}
+				
 				if(flag)
 					list.push_back(add);
+				
 			}
 		}
+
 		
 	}
 	
@@ -191,29 +200,26 @@ Expression replace(vector<pair<int, Expression>> replacements, Expression Base){
 	else if(Base.head->Type() == NodeType::Addition){
 		Expression baseClone = Base;
 		set <Node*> s;
-		int n = 0;
-		for(set<Node*>::iterator it = (dynamic_cast<AdditionNode*>(baseClone.head)->addends).begin(); it != (dynamic_cast<AdditionNode*>(baseClone.head)->addends).end(); ++it, n++){
+		for(set<Node*>::iterator it = (dynamic_cast<AdditionNode*>(baseClone.head)->addends).begin(); it != (dynamic_cast<AdditionNode*>(baseClone.head)->addends).end(); ++it){
 			Expression expr((*it)->clone());
 			Expression y = replace(replacements, expr);
+			s.insert(y.head->clone());
 		}
-		for(int i = 0; i < n; i++)
-			(dynamic_cast<AdditionNode*>(baseClone.head)->addends).erase((dynamic_cast<AdditionNode*>(baseClone.head)->addends).begin());
+		(dynamic_cast<AdditionNode*>(baseClone.head)->addends).clear();
 		for(set<Node*>::iterator it = s.begin(); it != s.end(); ++it){
-			(dynamic_cast<AdditionNode*>(baseClone.head)->addends).insert(*it);
+			(dynamic_cast<AdditionNode*>(baseClone.head)->addends).insert((*it)->clone());
 		}
 		return baseClone;
 	}
 	else if(Base.head->Type() == NodeType::Multiplication){
 		Expression baseClone = Base;
 		set <Node*> s;
-		int n = 0;
-		for(set<Node*>::iterator it = (dynamic_cast<ProductNode*>(baseClone.head)->factors).begin(); it != (dynamic_cast<ProductNode*>(baseClone.head)->factors).end(); ++it, n++){
-			s.insert(replace(replacements, Expression((*it)->clone())).head);
+		for(set<Node*>::iterator it = (dynamic_cast<ProductNode*>(baseClone.head)->factors).begin(); it != (dynamic_cast<ProductNode*>(baseClone.head)->factors).end(); ++it){
+			s.insert(replace(replacements, Expression((*it)->clone())).head->clone());
 		}
-		for(int i = 0; i < n; i++)
-			(dynamic_cast<ProductNode*>(baseClone.head)->factors).erase((dynamic_cast<ProductNode*>(baseClone.head)->factors).begin());
+		(dynamic_cast<ProductNode*>(baseClone.head)->factors).clear();
 		for(set<Node*>::iterator it = s.begin(); it != s.end(); ++it){
-			(dynamic_cast<ProductNode*>(baseClone.head)->factors).insert(*it);
+			(dynamic_cast<ProductNode*>(baseClone.head)->factors).insert((*it)->clone());
 		}
 		return baseClone;
 	}
@@ -226,10 +232,10 @@ Expression replace(vector<pair<int, Expression>> replacements, Expression Base){
 		return baseClone;
 	}
 	else if(Base.head->isStrictArity1()){
-//		Expression baseClone = Base;
-		Node* child = dynamic_cast<Arity1Node*>(Base.head->clone())->getArg()->clone();
-//		dynamic_cast<Arity1Node*>(baseClone.head)->setArg(replace(replacements, Expression(child->clone())).head);
-		Expression baseClone = replace(replacements, Expression(child->clone()));
+		Expression baseClone = Base;
+		Node* child = dynamic_cast<Arity1Node*>(Base.head)->getArg()->clone();
+		dynamic_cast<Arity1Node*>(baseClone.head)->setArg(replace(replacements, Expression(child)).head->clone());
+//		Expression baseClone = replace(replacements, Expression(child));
 		return baseClone;
 	}
 	return Base;
@@ -242,7 +248,7 @@ Expression replace(vector<pair<int, Expression>> replacements, Expression Base){
 
 vector<Expression> Rule::Apply(const Expression& formula) {
 	vector<Expression> list;
-	
+	vector <vector <pair <int, Expression>>> v = PatternList(formula, start);
 	for(const auto& replacements: PatternList(formula, start)){
 		list.push_back(replace(replacements, formula));
 	}
@@ -253,11 +259,11 @@ vector<Expression> Rule::Apply(const Expression& formula) {
 			for (const auto& expr : Apply(Expression((*it)->clone()))){
 				Expression formulaClone = formula;
 				for (set<Node*>::iterator jt = (dynamic_cast<AdditionNode*>(formulaClone.head)->addends).begin(); jt != (dynamic_cast<AdditionNode*>(formulaClone.head)->addends).end();)
-					if(*it == *jt)
+					if((*it)->isEqual(*jt))
 						jt = (dynamic_cast<AdditionNode*>(formulaClone.head)->addends).erase(jt);
 					else
 						++jt;
-				(dynamic_cast<AdditionNode*>(formulaClone.head)->addends).insert(expr.head);
+				(dynamic_cast<AdditionNode*>(formulaClone.head)->addends).insert(expr.head->clone());
 				list.push_back(formulaClone);
 			}
 		}
@@ -273,7 +279,7 @@ vector<Expression> Rule::Apply(const Expression& formula) {
 						jt = (dynamic_cast<ProductNode*>(formulaClone.head)->factors).erase(jt);
 					else
 						++jt;
-				(dynamic_cast<ProductNode*>(formulaClone.head)->factors).insert(expr.head);
+				(dynamic_cast<ProductNode*>(formulaClone.head)->factors).insert(expr.head->clone());
 				list.push_back(formulaClone);
 			}
 		}
@@ -282,19 +288,19 @@ vector<Expression> Rule::Apply(const Expression& formula) {
 	if (formula.head->Type() == NodeType::Exponentiation){
 		Node* Base = dynamic_cast<ExpNode*>(formula.head)->base;
 		Node* Exponent = dynamic_cast<ExpNode*>(formula.head)->exponent;
-		for(const auto & expr : Apply(Expression(Base))){
-			list.push_back(Expression(new ExpNode(expr.head, Exponent)));
+		for(const auto & expr : Apply(Expression(Base->clone()))){
+			list.push_back(Expression(new ExpNode(expr.head->clone(), Exponent->clone())));
 		}
-		for(const auto & expr : Apply(Expression(Exponent))){
-			list.push_back(Expression(new ExpNode(Base, expr.head)));
+		for(const auto & expr : Apply(Expression(Exponent->clone()))){
+			list.push_back(Expression(new ExpNode(Base->clone(), expr.head->clone())));
 		}
 		return list;
 	}
 	
 	if (formula.head->isStrictArity1()) {
-		Node* argument = dynamic_cast<Arity1Node*>(formula.head)->getArg();
-		for(const auto & expr : Apply(Expression(argument))) {
-			list.push_back(Expression(dynamic_cast<Arity1Node*>(formula.head->clone())->setArg(expr.head)));
+		Node* argument = dynamic_cast<Arity1Node*>(formula.head)->getArg()->clone();
+		for(const auto & expr : Apply(Expression(argument->clone()))) {
+			list.push_back(Expression(dynamic_cast<Arity1Node*>(formula.head->clone())->setArg(expr.head->clone())->clone()));
 		}
 		return list;
 	}
