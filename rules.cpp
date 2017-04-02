@@ -5,7 +5,7 @@ using namespace std;
 vector<vector<pair<int, Expression>>> PatternList(const Expression& formula, const Expression& pattern) {
     vector< vector<pair <int, Expression>> > list;
 
-    if(formula.head->Type() != pattern.head->Type()
+    if (formula.head->Type() != pattern.head->Type()
        || pattern.head->arity() != formula.head->arity()){
         if(pattern.head->Type() == NodeType::PatternMatch){
             vector<pair <int, Expression>> singleton;
@@ -16,7 +16,7 @@ vector<vector<pair<int, Expression>>> PatternList(const Expression& formula, con
         }
     }
 
-    if(formula.head->Type() == NodeType::Addition) {
+    else if (formula.head->Type() == NodeType::Addition) {
         auto FormulaList = dynamic_cast<AdditionNode*>(formula.head)->addends;
         auto PatternFirst = *((dynamic_cast<AdditionNode*>(pattern.head)->addends).begin());
         for(const auto& elmt: FormulaList){
@@ -58,7 +58,7 @@ vector<vector<pair<int, Expression>>> PatternList(const Expression& formula, con
         }
     }
 
-    if(formula.head->Type() == NodeType::Multiplication) {
+    else if (formula.head->Type() == NodeType::Multiplication) {
         auto FormulaList = dynamic_cast<ProductNode*>(formula.head)->factors;
         auto PatternFirst = *((dynamic_cast<ProductNode*>(pattern.head)->factors).begin());
         for(const auto& elmt: FormulaList){
@@ -100,7 +100,7 @@ vector<vector<pair<int, Expression>>> PatternList(const Expression& formula, con
         }
     }
 
-    if(formula.head->Type() == NodeType::Exponentiation){
+    else if (formula.head->Type() == NodeType::Exponentiation){
 
         vector<vector<pair <int, Expression>>> V = PatternList(Expression(dynamic_cast<ExpNode*>(formula.head)->base->clone()), Expression(dynamic_cast<ExpNode*>(pattern.head)->base->clone()));
         vector<vector<pair <int, Expression>>> U = PatternList(Expression(dynamic_cast<ExpNode*>(formula.head)->exponent->clone()), Expression(dynamic_cast<ExpNode*>(pattern.head)->exponent->clone()));
@@ -130,11 +130,11 @@ vector<vector<pair<int, Expression>>> PatternList(const Expression& formula, con
 
     }
 
-    if(formula.head->isStrictArity1()){
+    else if (formula.head->isStrictArity1()){
         list = PatternList(Expression(dynamic_cast<Arity1Node*>(formula.head)->getArg()), Expression(dynamic_cast<Arity1Node*>(pattern.head)->getArg()));
     }
 
-    if(formula.head->isStrictArity0()){
+    else if (formula.head->isStrictArity0()){
         if(*(formula.head) == *(pattern.head)){
             vector<pair<int, Expression>> xxx;
             list.push_back(xxx);
