@@ -350,7 +350,7 @@ public:
     virtual std::string getString() const {
         std::ostringstream myStream;
 
-        if (base->Type() == NodeType::Addition || base->Type() == NodeType::Multiplication || base->Type() == NodeType::Exponentiation) {
+        if (base->Type() == NodeType::Addition || base->Type() == NodeType::Multiplication || base->Type() == NodeType::Exponentiation || base->Type() == NodeType::ConstantQ) {
             myStream << "\\left(" + base->getString() + "\\right)";
         }
         else {
