@@ -529,7 +529,7 @@ public:
 
     Expression& operator=(Expression other);
 
-    //Expression(Expression&& other);
+    Expression(Expression&& other);
 
     ~Expression();
 
@@ -602,7 +602,7 @@ Node* compose(Node const * const f, Node const * const g) {
             factors.insert(compose(x,g));
         return new ProductNode(factors);
     }
-    
+
     // If we get here something bad happened;
     Node* x = nullptr; *x;
     return x;
@@ -638,18 +638,18 @@ Expression diff(const Expression& g) {
 //               but, d/dx x^(log2*3) = 3*log2*x^(log2*3-1)
 inline
 Node* diff(Node const * const head) {
-    
+
     // Make sure we're not differentiating a pattern
     if (head->hasPattern()) {
         int* x = nullptr; *x;
     }
-    
+
     // Derivative of constants are zero (do this first so we don't spend
     // a long time doing chain and product rules just to get a bunch of zeroes)
-    
+
     if (isConstant(head))
         return new RationalNode(Rational(0,1));
-    
+
     // Linearity
     // Checks if an argument is constant and if so just leaves it out
     // so that we don't have too many + 0's
@@ -661,7 +661,7 @@ Node* diff(Node const * const head) {
         }
         return new AdditionNode(addends);
     }
-    
+
     // Product rule
     // Leaves out additions of zero (i.e. c * x goes to c * 1 and not 0 * x + c * 1)
     if (head->Type() == NodeType::Multiplication) {
@@ -678,7 +678,7 @@ Node* diff(Node const * const head) {
         }
         return new AdditionNode(addends);
     }
-    
+
     // Chain rule
     // If the argument is an identity we just apply one of the rules below
     // since then chain rule isn't needed
@@ -692,21 +692,21 @@ Node* diff(Node const * const head) {
         Node* g = (dynamic_cast<const Arity1Node*>(head)->getArg()->clone());
         Node* f = (head->clone());
         dynamic_cast<Arity1Node*>(f)->setArg(new IdentityNode());
-        
+
         factors.insert(diff(g));
         factors.insert(compose(diff(f),g));
-        
+
         delete g;
         delete f;
-        
+
         return new ProductNode(factors);
     }
-    
+
     // Exponentiation rule - this gets a bit ugly
     if (head->Type() == NodeType::Exponentiation) {
         const Node* base = dynamic_cast<const ExpNode*>(head)->base;
         const Node* exponent = dynamic_cast<const ExpNode*>(head)->exponent;
-        
+
         // Check if exponentiation is of the form C^f(x)
         if (isConstant(base)) {
             std::unordered_set<Node*> factors;
@@ -720,13 +720,13 @@ Node* diff(Node const * const head) {
             }
             return new ProductNode(factors);
         }
-        
+
         // Check if exponentiation is of the form f(x)^C
         // This could introduce expressions of the form a/b * b * x
         if (isConstant(exponent)) {
             std::unordered_set<Node*> factors;
             factors.insert(exponent->clone());
-            
+
             // Do special stuff if the exponent is a rational number
             if (exponent->Type() == NodeType::ConstantQ) {
                 Rational newExponent = dynamic_cast<const RationalNode*>(exponent)->getNumber() - Rational(1,1);
@@ -740,7 +740,7 @@ Node* diff(Node const * const head) {
             }
             return new ProductNode(factors);
         }
-        
+
         // Otherwise we have to get ugly
         std::unordered_set<Node*> addends;
         // factors1 is x^y*lnx*dy
@@ -761,7 +761,7 @@ Node* diff(Node const * const head) {
         addends.insert(new ProductNode(factors2));
         return new AdditionNode(addends);
     }
-    
+
     // If we get here, then head is either of the form f(x) for some elementary function f
     // Or head is just an identity node
     // (which only happens if our whole expression was just x)
@@ -802,7 +802,7 @@ Node* diff(Node const * const head) {
         // Returns 1
         return new RationalNode(Rational(1,1));
     }
-    
+
     // If we get here, then I missed a case and something bad happened
     Node* x = nullptr; *x;
     return x;
