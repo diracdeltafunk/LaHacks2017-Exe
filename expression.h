@@ -539,6 +539,8 @@ public:
     Expression operator-(const Expression&) const;
 
     Expression operator*(const Expression&) const;
+    
+    Expression operator/(const Expression& g) const;
 
     bool operator==(const Expression&) const;
 
