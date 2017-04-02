@@ -93,7 +93,12 @@ public:
     }
     virtual std::string getString() const {
         std::ostringstream myStream;
-        myStream << "\\frac{" << q.getNumerator() << "}{" << q.getDenominator() << "}";
+        if (q.getNumerator() == 0)
+            myStream << 0;
+        else if (q.getDenominator() == 1)
+            myStream << q.getNumerator();
+        else
+            myStream << "\\frac{" << q.getNumerator() << "}{" << q.getDenominator() << "}";
         return myStream.str();
     }
 
@@ -482,7 +487,7 @@ public:
     Node* setArg(Node* newArg) { delete arg; arg = newArg; return this; }
 
     virtual std::string getString() const {
-        return "\\arctan(" + arg->getString() + ")";
+        return "\\arctan\\left(" + arg->getString() + "\\right)";
     }
 
 private:
