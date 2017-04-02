@@ -39,7 +39,7 @@ public:
     virtual bool isStrictArity0() const { return false; }
     virtual bool isStrictArity1() const { return false; }
     virtual bool hasType(const NodeType&) const = 0;
-    bool hasPattern() const { return hasType(NodeType::PatternMatch); };
+    bool hasPattern() const { return hasType(NodeType::PatternMatch); }
     virtual bool isEqual(Node const * const) const = 0;
     bool operator==(const Node& other) const { return other.isEqual(this); }
 };
